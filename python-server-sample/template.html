@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js" ></script>
+
+
+    <!--The viewport meta tag is used to improve the presentation and behavior of the samples
+      on iOS devices-->
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no">
+    <title>Geohash-based Indexing of Trajectories</title>
+
+    <link rel="stylesheet" href="http://js.arcgis.com/3.11/esri/css/esri.css">
+
+    <style>
+      #info {
+        top: 100px;
+        color: #444;
+        height: auto;
+        font-family: arial;
+        left: 20px;
+        margin: 5px;
+        padding: 10px;
+        position: absolute;
+        width: auto;
+        z-index: 40;
+        border: solid 2px #666;
+        border-radius: 4px;
+        background-color: #fff;
+      }
+
+      #notes {
+        top: 20px;
+        color: #444;
+        height: auto;
+        font-family: arial;
+        right: 20px;
+        margin: 5px;
+        padding: 10px;
+        position: absolute;
+        width: 250px;
+        z-index: 40;
+        border: solid 2px #666;
+        border-radius: 4px;
+        background-color: #fff;
+      }
+
+     ul{
+		 padding:5px;
+		 margin:5px;
+		 list-style-type: square;
+	 }
+
+
+      html, body, #mapDiv {
+        padding:0;
+        margin:0;
+        height:100%;
+      }
+      button {
+        display: block;
+        width:180px;
+      }
+    </style>
+
+    <script src="http://js.arcgis.com/3.11/"></script>
+    <script>
+      var map, tb, animationList;
+
+      require([
+        "esri/map", "esri/toolbars/draw", "esri/geometry/Point",
+        "esri/symbols/SimpleMarkerSymbol", "esri/symbols/SimpleLineSymbol",
+        "esri/symbols/SimpleFillSymbol", "esri/symbols/CartographicLineSymbol",
+        "esri/graphic",
+        "esri/Color", "dojo/dom", "dojo/on", "dojo/domReady!"
+      ], function(
+        Map, Draw, Point,
+        SimpleMarkerSymbol, SimpleLineSymbol,
+        SimpleFillSymbol, CartographicLineSymbol,
+        Graphic,
+        Color, dom, on
+      ) {
+        map = new Map("mapDiv", {
+          basemap: "streets",
+          center: [11.59326738647539, 48.147506174501835],
+          zoom: 15
+        });
+
+        map.on("load", initToolbar);
+        map.on("click", onClick);
+
+        var pointSymbol = new SimpleMarkerSymbol(
+            SimpleMarkerSymbol.STYLE_DIAMOND, 5,
+            new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([204, 0, 0]), 4));
+
+        var pointSymbol2 = new SimpleMarkerSymbol(
+                SimpleMarkerSymbol.STYLE_CIRCLE, 5,
+                new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([0, 204, 0]), 4));
+
+        var pointSymbol3 = new SimpleMarkerSymbol(
+                SimpleMarkerSymbol.STYLE_CROSS, 5,
+                new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([0, 0, 204]), 4));
+
+        // lineSymbol used for freehand polyline, polyline and line.
+        var lineSymbol = new CartographicLineSymbol(
+          CartographicLineSymbol.STYLE_SOLID,
+          new Color([0,0,0]), 2,
+          CartographicLineSymbol.CAP_ROUND,
+          CartographicLineSymbol.JOIN_MITER, 5
+        );
+
+        var lineSymbol2 = new CartographicLineSymbol(
+          CartographicLineSymbol.STYLE_DASH,
+          new Color([0,204,0]), 2,
+          CartographicLineSymbol.CAP_ROUND,
+          CartographicLineSymbol.JOIN_MITER, 5
+        );
+
+        var lineSymbol2 = new CartographicLineSymbol(
+          CartographicLineSymbol.STYLE_DASH,
+          new Color([0,0,204]), 2,
+          CartographicLineSymbol.CAP_ROUND,
+          CartographicLineSymbol.JOIN_MITER, 5
+        );
+
+
+        var accentedSymbol = new CartographicLineSymbol(
+          CartographicLineSymbol.STYLE_SOLID,
+          new Color([255,0,0]), 4,
+          CartographicLineSymbol.CAP_ROUND,
+          CartographicLineSymbol.JOIN_MITER, 5
+        );
+
+        var polySymbol = new SimpleFillSymbol(
+		SimpleFillSymbol.STYLE_SOLID,
+		lineSymbol,new Color([255,255,0,0.25])
+		);
+
+
+		var editing = 0;
+		var T = [];
+
+		function initToolbar() {
+
+		  tb = new Draw(map);
+          tb.on("draw-end", addGraphic);
+          tb.activate("polyline");
+
+          on(dom.byId("info"), "click", function(evt) {
+            if ( evt.target.id === "info" ) {
+              return;
+            }
+            var tool = evt.target.id.toLowerCase();
+            //alert(tool);
+            if (tool == "reset")
+            {
+				// hack, does not show up
+
+				//window.location.reload();
+                $("#coordinates").val("[]");
+                $("#query").val("[]");
+                editing = 0;
+                T = [];
+				map.graphics.clear();
+
+			}
+			if (tool == "show")
+			{
+					idx = $("#idx").val();
+					addTrajectory(idx);
+			}
+			if (tool == "idquery")
+			{
+				doIndexQuery($("#idx").val());
+			}
+
+			if (tool == "cmdquery")
+			{
+					doQuery("intersect");
+
+			}
+			if (tool == "cmdjaccard")
+			{
+					doQuery("jaccard");
+			}
+			if (tool == "cmdsubsetcorr")
+			{
+					doQuery("subsetcorr");
+			}
+
+			if (tool == "langfang")
+			{
+				$("#query").val(JSON.stringify(["wx4bx","wx508","wx50b","wx4bz","wx4by","wx4bw"]));
+				tool = "showquery";
+			}
+
+			if (tool == "showquery")
+			{
+					map.graphics.clear();
+					A = JSON.parse($("#query").val());
+
+					for(var i=0; i < A.length; i++)
+					{
+						box = decodeGeoHash(A[i]);
+						addGeohashBox(box);
+					}
+
+			}
+			if (tool == "showlist")
+                        {
+					map.graphics.clear();
+					A = JSON.parse($("#list").val());
+					animationList = A;
+					animate();
+                        }
+      if (tool == "douglas_peucker")
+      {
+          var epsilon = prompt("Pleaser enter epsilon: ", "0.001");
+          doDouglasPeucker(epsilon);
+      }
+      if (tool == "dbscan")
+      {
+          var epsilon = prompt("Pleaser enter epsilon: ", "0.001");
+          var minPts = prompt("Pleaser enter minimal Points in a Cluster: ", "5");
+          doDbscan(epsilon, minPts);
+
+      }
+      if(tool == "resample")
+      {
+          var dist = prompt("Please enter distance (in m) to resample after: ", "10");
+          doResample(dist);
+      }
+      if(tool == "threshold")
+      {
+          var velocity = prompt("Please enter velocity threshold: ", "0.1");
+          var orientation = prompt("Please enter orientation: ", "15");
+
+          doThreshold(velocity, orientation);
+      }
+
+
+    });
+
+
+    }
+
+	function animate()
+    {
+	if(animationList.length > 0)
+            {
+		//map.graphics.clear();
+		addTrajectory(animationList[0]);
+		$("#idx").val(animationList[0]);
+		animationList.shift();
+		alert(animationList);
+		window.setTimeout(animate,500);
+            }
+//		                alert(animationList);
+    }
+
+
+
+    function addTrajectory(idx, symbol)
+    {
+        symbol = (typeof symbol === "undefined")? lineSymbol : symbol;
+		$.get( "get/"+idx, function( data ) {
+			$("#coordinates").val(data);
+			pa = JSON.parse(data);
+			transformedPoints=[];
+			//alert('h');
+			for(index =0; index < pa.length; index++)
+			{
+				p = ToWebMercator([pa[index][0],pa[index][1]]);
+				transformedPoints[index] = [p[1],p[0]];
+			}
+			//alert(JSON.stringify(transformedPoints));
+    		//var sr = //new esri.SpatialReference({wkid: 4326});
+    		var sr = map.spatialReference;
+    		var pl = new esri.geometry.Polyline(sr);
+    		pl.addPath(transformedPoints);
+    		alert('debug');
+    		map.graphics.add(new Graphic(pl, symbol));
+		});
+
+	}
+
+
+
+    // Array to hold the query
+//        var editing = 0;
+//       var QUERYHASHES=[];
+
+
+    function onClick(evt)
+    {
+			len = parseInt($("#geohashlen").val());
+			lat =evt.mapPoint.getLatitude();
+			lon = evt.mapPoint.getLongitude();
+			$("#point").val(lat + ' ' + lon);
+			s = encodeGeoHash(lat,lon)
+			s = s.substring(0,len);
+			$("#geohash").val(s);
+			box = decodeGeoHash(s);
+
+            var point = new Graphic(evt.mapPoint, pointSymbol);
+            map.graphics.add(point);
+			//addGeohashBox(box);
+			QUERYHASHES = JSON.parse($("#query").val());
+			QUERYHASHES[QUERYHASHES.length] = s;
+			COORDINATES = JSON.parse($("#coordinates").val());
+			COORDINATES[COORDINATES.length] = $("#point").val();
+            TIMES = JSON.parse($("#times").val());
+            TIMES[TIMES.length] = Date.now();
+			$("#coordinates").val(JSON.stringify(COORDINATES));
+			$("#query").val(JSON.stringify(QUERYHASHES));
+            $('#times').val(JSON.stringify(TIMES));
+//				$.get( "click?lat="+lat+"&lon="+lon, function( data ) {	});
+
+	}
+
+	function doQuery(x)
+	{
+		// call into intersect?hashes=[%22wx4er9%22,%22wx4g08%22,%22wx4enb%22]
+		// encodeURIComponent
+		myURL = x+"?hashes="+encodeURIComponent($("#query").val());
+		$.get( myURL, function( data ) {
+
+			idx = JSON.parse(data);
+			for (i=0; i < idx.length; i++)
+			{
+				addTrajectory(idx[i]);
+			}
+
+		});
+	}
+
+    function doDouglasPeucker(epsilon)
+	{
+        myURL = "douglasPeucker?eps="+epsilon+"&coords="+encodeURIComponent($("#coordinates").val());
+
+        //map.graphics.clear();
+        $.get( myURL, function( data ) {
+
+
+            pa = JSON.parse(data);
+            transformedPoints=[];
+            //alert('h');
+            var sr = map.spatialReference;
+            for(index =0; index < pa.length; index++)
+            {
+              p = ToWebMercator([pa[index][0],pa[index][1]]);
+              transformedPoints[index] = [p[1],p[0]];
+            }
+              //alert(JSON.stringify(transformedPoints));
+            //var sr = //new esri.SpatialReference({wkid: 4326});
+            var pl = new esri.geometry.Polyline(sr);
+            pl.addPath(transformedPoints);
+            map.graphics.add(new Graphic(pl, lineSymbol2));
+        });
+	}
+
+    function doDbscan(epsilon, minPts)
+	{
+        myURL = "dbscan?eps="+epsilon+"&minPts="+minPts+"&coords="+encodeURIComponent($("#coordinates").val());
+
+        //map.graphics.clear();
+
+        $.get( myURL, function( data ) {
+
+            pa = JSON.parse(data);
+            transformedPoints=[];
+            //alert('h');
+            var sr = map.spatialReference;
+            for(index =0; index < pa.length; index++)
+            {
+                p = ToWebMercator([pa[index][0],pa[index][1]]);
+                transformedPoints[index] = [p[1],p[0]];
+                var point = new Point([p[1], p[0]], sr);
+                map.graphics.add(new Graphic(point, pointSymbol3));
+            }
+              //alert(JSON.stringify(transformedPoints));
+            //var sr = //new esri.SpatialReference({wkid: 4326});
+            var pl = new esri.geometry.Polyline(sr);
+            pl.addPath(transformedPoints);
+            map.graphics.add(new Graphic(pl, lineSymbol2));
+        });
+	}
+
+    function doResample(dist)
+	{
+        myURL = "resampleData?dist="+dist+"&coords="+encodeURIComponent($("#coordinates").val())+"&times="+encodeURIComponent($("#times").val());
+        $("#coordinates").val("[]");
+        $("#query").val("[]");
+        $("#times").val("[]");
+
+        $.get( myURL, function( data ) {
+
+            all = JSON.parse(data);
+            pa = all[0];
+            ti = all[1];
+            rawCoordinates=[];
+            rawTimes=[];
+            //alert('h');
+            var sr = map.spatialReference;
+            for(index =0; index < pa.length; index++)
+            {
+                rawCoordinates[rawCoordinates.length] = pa[index][0] + ' ' + pa[index][1];
+                rawTimes[index] = ti[index];
+                p = ToWebMercator([pa[index][0],pa[index][1]]);
+                var point = new Point([p[1], p[0]], sr);
+                map.graphics.add(new Graphic(point, pointSymbol2));
+                console.log(ti[index]);
+            }
+            $("#coordinates").val(JSON.stringify(rawCoordinates));
+              //alert(JSON.stringify(transformedPoints));
+            //var sr = //new esri.SpatialReference({wkid: 4326});
+
+
+        });
+	}
+
+    function doThreshold(velocityT, orientationT)
+	{
+        myURL = "threshold?vel="+velocityT+"&orientation="+orientationT
+                    +"&coords="+encodeURIComponent($("#coordinates").val())
+                    +"&times="+encodeURIComponent($("#times").val());
+
+        $.get( myURL, function( data ) {
+
+            pa = JSON.parse(data);
+            transformedPoints=[];
+            //alert('h');
+            var sr = map.spatialReference;
+            for(index =0; index < pa.length; index++)
+            {
+                p = ToWebMercator([pa[index][0],pa[index][1]]);
+                transformedPoints[index] = [p[1],p[0]];
+                var point = new Point([p[1], p[0]], sr);
+                map.graphics.add(new Graphic(point, pointSymbol2));
+            }
+            var pl = new esri.geometry.Polyline(sr);
+            pl.addPath(transformedPoints);
+            map.graphics.add(new Graphic(pl, lineSymbol2));
+
+        });
+	}
+
+	function doIndexQuery(x)
+	{
+		// call into intersect?hashes=[%22wx4er9%22,%22wx4g08%22,%22wx4enb%22]
+		// encodeURIComponent
+		myURL = "/numjaccard/"+x;
+
+		$.get( myURL, function( data ) {
+
+			idx = JSON.parse(data);
+			for (i=0; i < idx.length; i++)
+			{
+				if (idx[i] == x)
+				{
+					addTrajectory(idx[i],accentedSymbol);
+				}else{
+					addTrajectory(idx[i]);
+				}
+			}
+
+			});
+	}
+
+    function addGeohashBox(box)
+    {
+		var sr = map.spatialReference//new esri.SpatialReference({wkid: 4326});
+		p1 = ToWebMercator([box.latitude[0],box.longitude[0]]);
+		p2 = ToWebMercator([box.latitude[1],box.longitude[0]]);
+		p3 = ToWebMercator([box.latitude[1],box.longitude[1]]);
+		p4 = ToWebMercator([box.latitude[0],box.longitude[1]]);
+
+		var ep1 = new esri.geometry.Point(p1[1],p1[0],sr);
+		var ep2 = new esri.geometry.Point(p2[1],p2[0],sr);
+		var ep3 = new esri.geometry.Point(p3[1],p3[0],sr);
+		var ep4 = new esri.geometry.Point(p4[1],p4[0],sr);
+
+		var poly = new esri.geometry.Polygon(sr);
+		poly.addRing([ep1,ep2,ep3,ep4,ep1]);
+		map.graphics.add(new Graphic(poly, polySymbol));
+
+	}
+
+    function addGraphic(evt)
+    {
+		tb.deactivate();
+		map.enableMapNavigation();
+		T[editing] = evt.geometry;
+		editing ++;
+		if (editing < 2){
+			tb.activate("polyline");
+			$("#next").html("Draw a second polyline...");
+		}else{
+			req = [T[0].paths[0],T[1].paths[0]];
+			$.post( "distance", { paths: JSON.stringify(req)})
+			.done(function( data ) {
+					res = JSON.parse(data);
+					$("#result").html(
+					"Frechet: " + res.frechet.toFixed(3));
+					console.log("got result");
+			}
+			).fail(function() {alert( "Service Error");});
+		}
+		map.graphics.add(new Graphic(evt.geometry, lineSymbol));
+	}
+});
+    </script>
+  </head>
+
+  <body>
+
+    <div id="info">
+		<H2>Setting / Control:</H2>
+		<button id=reset>Reset</button>
+		Len: <select id="geohashlen">
+		<option>1</option>
+		<option>2</option>
+		<option>3</option>
+		<option>4</option>
+		<option selected>5</option>
+		<option>6</option>
+		<option>7</option>
+		<option>8</option>
+		</select>
+		<H2>Query:</H2>
+		<input type=text id=idx></input>
+        <button id=douglas_peucker>Douglas Peucker</button>
+        <button id=resample>Resample Trajectory</button>
+        <button id=dbscan>DBSCAN</button>
+        <button id=threshold>Threshold Sampling</button>
+		<!--
+        <button id=show>Show</button>
+        <button id=idquery>Query By Index</button>
+		<button id=cmdquery>Index</button>
+		<button id=cmdjaccard>Jaccard</button>
+		<button id=cmdsubsetcorr>Subset</button>
+        -->
+		<input type=text id=point></input><BR>
+		<input type=text id=geohash></input><BR>
+		<textarea id=query>[]</textarea><BR>
+		<textarea id=coordinates>[]</textarea><BR>
+        <textarea id=times>[]</textarea><BR>
+		<!--
+        <button id=showquery>Show Query...</button>
+		<button id=langfang>LANGFANG</button>
+        -->
+		<textarea id=list>[]</textarea><BR>
+		<button id=showlist>Show List...</button>
+    </div>
+
+    <div id="mapDiv"></div>
+<div id="notes">
+<h1>Usage:</h1>
+<textarea id=coordinates height=80>
+
+</textarea>
+</div>
+  </body>
+<script>
+// geohash.js
+// Geohash library for Javascript
+// (c) 2008 David Troy
+// Distributed under the MIT License
+
+BITS = [16, 8, 4, 2, 1];
+
+BASE32 = 											   "0123456789bcdefghjkmnpqrstuvwxyz";
+NEIGHBORS = { right  : { even :  "bc01fg45238967deuvhjyznpkmstqrwx" },
+							left   : { even :  "238967debc01fg45kmstqrwxuvhjyznp" },
+							top    : { even :  "p0r21436x8zb9dcf5h7kjnmqesgutwvy" },
+							bottom : { even :  "14365h7k9dcfesgujnmqp0r2twvyx8zb" } };
+BORDERS   = { right  : { even : "bcfguvyz" },
+							left   : { even : "0145hjnp" },
+							top    : { even : "prxz" },
+							bottom : { even : "028b" } };
+
+NEIGHBORS.bottom.odd = NEIGHBORS.left.even;
+NEIGHBORS.top.odd = NEIGHBORS.right.even;
+NEIGHBORS.left.odd = NEIGHBORS.bottom.even;
+NEIGHBORS.right.odd = NEIGHBORS.top.even;
+
+BORDERS.bottom.odd = BORDERS.left.even;
+BORDERS.top.odd = BORDERS.right.even;
+BORDERS.left.odd = BORDERS.bottom.even;
+BORDERS.right.odd = BORDERS.top.even;
+
+function refine_interval(interval, cd, mask) {
+	if (cd&mask)
+		interval[0] = (interval[0] + interval[1])/2;
+  else
+		interval[1] = (interval[0] + interval[1])/2;
+}
+
+function calculateAdjacent(srcHash, dir) {
+	srcHash = srcHash.toLowerCase();
+	var lastChr = srcHash.charAt(srcHash.length-1);
+	var type = (srcHash.length % 2) ? 'odd' : 'even';
+	var base = srcHash.substring(0,srcHash.length-1);
+	if (BORDERS[dir][type].indexOf(lastChr)!=-1)
+		base = calculateAdjacent(base, dir);
+	return base + BASE32[NEIGHBORS[dir][type].indexOf(lastChr)];
+}
+
+function decodeGeoHash(geohash) {
+	var is_even = 1;
+	var lat = []; var lon = [];
+	lat[0] = -90.0;  lat[1] = 90.0;
+	lon[0] = -180.0; lon[1] = 180.0;
+	lat_err = 90.0;  lon_err = 180.0;
+
+	for (i=0; i<geohash.length; i++) {
+		c = geohash[i];
+		cd = BASE32.indexOf(c);
+		for (j=0; j<5; j++) {
+			mask = BITS[j];
+			if (is_even) {
+				lon_err /= 2;
+				refine_interval(lon, cd, mask);
+			} else {
+				lat_err /= 2;
+				refine_interval(lat, cd, mask);
+			}
+			is_even = !is_even;
+		}
+	}
+	lat[2] = (lat[0] + lat[1])/2;
+	lon[2] = (lon[0] + lon[1])/2;
+
+	return { latitude: lat, longitude: lon};
+}
+
+function encodeGeoHash(latitude, longitude) {
+	var is_even=1;
+	var i=0;
+	var lat = []; var lon = [];
+	var bit=0;
+	var ch=0;
+	var precision = 12;
+	geohash = "";
+
+	lat[0] = -90.0;  lat[1] = 90.0;
+	lon[0] = -180.0; lon[1] = 180.0;
+
+	while (geohash.length < precision) {
+	  if (is_even) {
+			mid = (lon[0] + lon[1]) / 2;
+	    if (longitude > mid) {
+				ch |= BITS[bit];
+				lon[0] = mid;
+	    } else
+				lon[1] = mid;
+	  } else {
+			mid = (lat[0] + lat[1]) / 2;
+	    if (latitude > mid) {
+				ch |= BITS[bit];
+				lat[0] = mid;
+	    } else
+				lat[1] = mid;
+	  }
+
+		is_even = !is_even;
+	  if (bit < 4)
+			bit++;
+	  else {
+			geohash += BASE32[ch];
+			bit = 0;
+			ch = 0;
+	  }
+	}
+	return geohash;
+}
+</script>
+
+
+<script>
+//////// some tranasformation
+function ToGeographic(A)
+{
+	var mercatorY_lat=A[0];
+	var mercatorX_lon=A[1];
+    if (Math.abs(mercatorX_lon) < 180 && Math.abs(mercatorY_lat) < 90)
+        return A;
+
+    if ((Math.abs(mercatorX_lon) > 20037508.3427892) || (Math.abs(mercatorY_lat) > 20037508.3427892))
+        return A;
+
+    x = mercatorX_lon;
+     y = mercatorY_lat;
+     num3 = x / 6378137.0;
+     num4 = num3 * 57.295779513082323;
+     num5 = Math.Floor((double)((num4 + 180.0) / 360.0));
+     num6 = num4 - (num5 * 360.0);
+     num7 = 1.5707963267948966 - (2.0 * Math.Atan(Math.Exp((-1.0 * y) / 6378137.0)));
+    mercatorX_lon = num6;
+    mercatorY_lat = num7 * 57.295779513082323;
+    return ([mercatorY_lat,mercatorX_lon]);
+}
+
+function ToWebMercator(A)
+{
+	var mercatorY_lat=A[0];
+	var mercatorX_lon=A[1];
+
+    if ((Math.abs(mercatorX_lon) > 180 || Math.abs(mercatorY_lat) > 90))
+        return A;
+
+     num = mercatorX_lon * 0.017453292519943295;
+     x = 6378137.0 * num;
+     a = mercatorY_lat * 0.017453292519943295;
+
+    mercatorX_lon = x;
+    mercatorY_lat = 3189068.5 * Math.log((1.0 + Math.sin(a)) / (1.0 - Math.sin(a)));
+    return ([mercatorY_lat,mercatorX_lon]);
+}
+
+
+</script>
+
+</html>

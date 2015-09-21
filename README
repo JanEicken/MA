@@ -1,0 +1,35 @@
+LIBTRAJCOMP 0.1
+---------------
+
+Welcome to the initial release of the Trajectory Computing Library 
+
+	libtrajcomp
+
+We intend to bring together clean, template-driven C++ implementation of 
+important algorithms in the field of trajectory computing in order to
+facilitate research in this domain. 
+
+The choice of template-driven C++ is due to the importance of fast computing
+and memory effectiveness unreachable with, for example, Java or pure python
+and the list of bindings:
+
+Currently, bindings for GNU octave and python are given, however, as time
+goes on, we will add bindings for mobile operating systems, especially 
+Android and the iPhone, which makes further clear, why we chose the most
+portable language for these domains.
+
+If you are interested in Java implementations, you can find some on our
+Java trajectory computing sub-page, mainly contributed by students of mine:
+
+http://www.trajectorycomputing.com/java
+
+If you can give useful comments or even contribute algorithms or patches,
+send them to me via email (for the first time, we might turn to a platform
+for that, once a community grows...)
+
+Have fun with this and consider the examples given on 
+
+	http://trajectorycomputing.com/libtrajcomp/
+
+Thank you for downloading this distribution,
+   Martin Werner <martin.werner@ifi.lmu.de>

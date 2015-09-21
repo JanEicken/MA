@@ -1,0 +1,19 @@
+This library is intended to be helpful in research and contains a lot
+of code from different sources integrated into an accessible library. 
+
+Here is a (hopefully complete) list of contributing sources (and licenses):
+
+1) bloom/murmur.hpp
+	https://sites.google.com/site/murmurhash/
+
+	Encapsulates the implementation of the Murmurhash as found on 
+	into a header-only library removing some cool features.
+	
+	However, some automatic template-driven selection of the 64bit and
+	32 bit implementation are planned at least for the two most important
+	compiler families GNU g++ and MSVC, see the comment in the file
+2) samples/prague.dat
+	http://trajectorycomputing.com/datasets/prague-ego-shooter-dataset/
+	
+	A very clean, small trajectory dataset generated from a modified 
+	Urban Terror server running the map Prague.

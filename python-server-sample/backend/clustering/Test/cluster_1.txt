@@ -1,0 +1,59 @@
+###############################################################
+# Settings:
+# de.lmu.ifi.dbs.elki.workflow.InputStep
+# -db StaticArrayDatabase
+# 
+# de.lmu.ifi.dbs.elki.database.StaticArrayDatabase
+# -dbc FileBasedDatabaseConnection
+# 
+# de.lmu.ifi.dbs.elki.datasource.FileBasedDatabaseConnection
+# -dbc.in /home/jan/Desktop/Masterarbeit/trajcomputing_code/v_2/libtrajcomp-src/python-server-sample/TestTraj.csv
+# -dbc.parser NumberVectorLabelParser
+# 
+# de.lmu.ifi.dbs.elki.datasource.parser.NumberVectorLabelParser
+# -parser.colsep (\s+|\s*[,;]\s*)
+# -parser.quote "
+# -parser.labelIndices [unset]
+# -parser.vector-type DoubleVector
+# 
+# de.lmu.ifi.dbs.elki.datasource.FileBasedDatabaseConnection
+# -dbc.filter [unset]
+# 
+# de.lmu.ifi.dbs.elki.database.StaticArrayDatabase
+# -db.index [unset]
+# 
+# de.lmu.ifi.dbs.elki.workflow.AlgorithmStep
+# -time false
+# -algorithm clustering.DBSCAN
+# 
+# de.lmu.ifi.dbs.elki.algorithm.clustering.DBSCAN
+# -algorithm.distancefunction EuclideanDistanceFunction
+# -dbscan.epsilon 0.00100000
+# -dbscan.minpts 5
+# 
+# de.lmu.ifi.dbs.elki.workflow.EvaluationStep
+# -evaluator AutomaticEvaluation
+###############################################################
+# Cluster: Cluster 1
+ID=22 48.14418454975974 11.580800478973652
+ID=23 48.14424562638349 11.58063571878419
+ID=30 48.14435636320787 11.581015055694849
+ID=31 48.14416463459513 11.581086890472042
+ID=24 48.14432772767312 11.580414240875497
+ID=25 48.14461408230173 11.580714648285173
+ID=26 48.144614082543185 11.580956980358803
+ID=32 48.143898192734824 11.581186717071805
+ID=29 48.14438705173338 11.581291005864665
+ID=27 48.14461408230173 11.581186717071805
+ID=33 48.14363236505498 11.581120318317945
+ID=28 48.144413634229444 11.58153003982572
+ID=34 48.14336653733689 11.581053920251811
+ID=35 48.14310070958056 11.580987522873395
+ID=36 48.14283488178599 11.580921126182682
+ID=37 48.142569053953174 11.580854730179658
+ID=38 48.14230322608212 11.58078833486431
+ID=39 48.14203739817284 11.580721940236623
+ID=40 48.14166455311272 11.580628817596692
+ID=41 48.140983280845155 11.580562232934765
+ID=21 48.144012582593874 11.582148303530829
+###############################################################

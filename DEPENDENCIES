@@ -1,0 +1,7 @@
+trajcomp_geo.hpp:
+	The geodesic distances make use of the C++ version of GeographicLib.
+	On Debian and similar install 
+		libgeographiclib-dev
+	and link using
+		-lGeographic
+

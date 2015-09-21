@@ -1,0 +1,46 @@
+###############################################################
+# Settings:
+# de.lmu.ifi.dbs.elki.workflow.InputStep
+# -db StaticArrayDatabase
+# 
+# de.lmu.ifi.dbs.elki.database.StaticArrayDatabase
+# -dbc FileBasedDatabaseConnection
+# 
+# de.lmu.ifi.dbs.elki.datasource.FileBasedDatabaseConnection
+# -dbc.in /home/jan/Desktop/Masterarbeit/trajcomputing_code/v_2/libtrajcomp-src/python-server-sample/TestTraj.csv
+# -dbc.parser NumberVectorLabelParser
+# 
+# de.lmu.ifi.dbs.elki.datasource.parser.NumberVectorLabelParser
+# -parser.colsep (\s+|\s*[,;]\s*)
+# -parser.quote "
+# -parser.labelIndices [unset]
+# -parser.vector-type DoubleVector
+# 
+# de.lmu.ifi.dbs.elki.datasource.FileBasedDatabaseConnection
+# -dbc.filter [unset]
+# 
+# de.lmu.ifi.dbs.elki.database.StaticArrayDatabase
+# -db.index [unset]
+# 
+# de.lmu.ifi.dbs.elki.workflow.AlgorithmStep
+# -time false
+# -algorithm clustering.DBSCAN
+# 
+# de.lmu.ifi.dbs.elki.algorithm.clustering.DBSCAN
+# -algorithm.distancefunction EuclideanDistanceFunction
+# -dbscan.epsilon 0.00100000
+# -dbscan.minpts 2
+# 
+# de.lmu.ifi.dbs.elki.workflow.EvaluationStep
+# -evaluator AutomaticEvaluation
+###############################################################
+# Cluster: Cluster 0
+ID=11 48.14671873979969 11.579598849334944
+ID=12 48.14691917886989 11.579684680023423
+ID=18 48.146776008185334 11.579384272613748
+ID=13 48.14689054476492 11.57989925674462
+ID=16 48.14714825113445 11.579641764679183
+ID=17 48.146747374000505 11.580070918121578
+ID=15 48.14706234915505 11.580028002777338
+ID=14 48.14691917886989 11.580371325531255
+###############################################################

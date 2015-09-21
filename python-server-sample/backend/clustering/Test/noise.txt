@@ -1,0 +1,69 @@
+###############################################################
+# Settings:
+# de.lmu.ifi.dbs.elki.workflow.InputStep
+# -db StaticArrayDatabase
+# 
+# de.lmu.ifi.dbs.elki.database.StaticArrayDatabase
+# -dbc FileBasedDatabaseConnection
+# 
+# de.lmu.ifi.dbs.elki.datasource.FileBasedDatabaseConnection
+# -dbc.in /home/jan/Desktop/Masterarbeit/trajcomputing_code/v_2/libtrajcomp-src/python-server-sample/TestTraj.csv
+# -dbc.parser NumberVectorLabelParser
+# 
+# de.lmu.ifi.dbs.elki.datasource.parser.NumberVectorLabelParser
+# -parser.colsep (\s+|\s*[,;]\s*)
+# -parser.quote "
+# -parser.labelIndices [unset]
+# -parser.vector-type DoubleVector
+# 
+# de.lmu.ifi.dbs.elki.datasource.FileBasedDatabaseConnection
+# -dbc.filter [unset]
+# 
+# de.lmu.ifi.dbs.elki.database.StaticArrayDatabase
+# -db.index [unset]
+# 
+# de.lmu.ifi.dbs.elki.workflow.AlgorithmStep
+# -time false
+# -algorithm clustering.DBSCAN
+# 
+# de.lmu.ifi.dbs.elki.algorithm.clustering.DBSCAN
+# -algorithm.distancefunction EuclideanDistanceFunction
+# -dbscan.epsilon 0.00100000
+# -dbscan.minpts 5
+# 
+# de.lmu.ifi.dbs.elki.workflow.EvaluationStep
+# -evaluator AutomaticEvaluation
+###############################################################
+# Cluster: Noise
+ID=63 48.13659554882535 11.594275897064826
+ID=62 48.13676995577506 11.593258930660149
+ID=61 48.136917514630305 11.592398469163415
+ID=60 48.13706506706305 11.591538002720773
+ID=59 48.13721261307323 11.590677531332386
+ID=47 48.138023111211595 11.58576417819421
+ID=46 48.13827482678077 11.584415984857777
+ID=45 48.13852652658309 11.583067778301421
+ID=44 48.13877821061827 11.58171955852572
+ID=43 48.13902987888601 11.580371325531257
+ID=42 48.140302008539145 11.580495650040133
+ID=20 48.143874226520374 11.583232598719007
+ID=19 48.14373586024877 11.584316888061652
+ID=18 48.14359748377913 11.58540117155839
+ID=17 48.1434590971116 11.586485449208851
+ID=16 48.14332070024629 11.587569721012667
+ID=15 48.14318229318329 11.588653986969463
+ID=14 48.14385032513125 11.589860807248325
+ID=13 48.144205922189585 11.590503226400005
+ID=12 48.14456151566802 11.591145654452836
+ID=11 48.144917105566485 11.591788091406963
+ID=10 48.14527269188487 11.592430537262532
+ID=9 48.14625941874126 11.593058693768882
+ID=8 48.14682165238497 11.593416627009722
+ID=7 48.147383884917375 11.59377456809265
+ID=6 48.14794611633841 11.59413251701798
+ID=5 48.14850834664805 11.594490473786022
+ID=4 48.14916865481485 11.594775954081118
+ID=3 48.14958295354053 11.594955077569292
+ID=2 48.1499972519879 11.595134203949614
+ID=1 48.15056989638581 11.59539169601505
+###############################################################
