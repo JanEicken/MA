@@ -169,6 +169,23 @@
       "confidence" : 100
     } ]
   } ]
+}, {
+  "timestampMs" : "1442299500039",
+  "latitudeE7" : 481498117,
+  "longitudeE7" : 115597353,
+  "accuracy" : 43,
+  "activitys" : [ {
+    "timestampMs" : "1442299490981",
+    "activities" : [ {
+      "type" : "still",
+      "confidence" : 100
+    } ]
+  } ]
+}, {
+  "timestampMs" : "1442299380013",
+  "latitudeE7" : 481498117,
+  "longitudeE7" : 115597353,
+  "accuracy" : 43
 }
 ]
 }

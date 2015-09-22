@@ -372,18 +372,22 @@ static PyObject *
 trajcomp_threshold(PyObject *self, PyObject *args)
 {
 	std::cout << "enter python module threshold" << endl;
+	const char* d;
+	const char* t;
 	double v;
 	double o;
-	if (!PyArg_ParseTuple(args, "dd", &v, &o)) {
+	if (!PyArg_ParseTuple(args, "ddss", &v, &o, &d, &t)) {
 		std::cout << "Error in parsing params from python to c++" << std::endl;
 		return NULL;
 	}
 	trajectory traj(2);
 	trajectory result(2);
+	std::string dataPath(d);
+	std::string timesPath(t);
 	vector<double> times(1);
 	trajectory resample_result(2);
-	loadXY("../TestTraj.csv", traj);
-	loadTime("../TestTrajTimes.csv", times);
+	loadXY(dataPath, traj);
+	loadTime(timesPath, times);
 	result = trajcomp::threshold_sampling(traj, times, v, o);
 
 	PyObject *list = PyList_New(0);

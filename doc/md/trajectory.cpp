@@ -917,6 +917,7 @@ double longitude_converter(std::string lon)
 
 void export_google_times(std::string &data_path, std::string &user_name)
 {
+	std::cout << std::fixed;
 	try
        {
 
@@ -977,14 +978,16 @@ void export_google_times(std::string &data_path, std::string &user_name)
 			times_location << time_save_path << i << ".csv";
 
 			std::ofstream traj_out;
+			traj_out << fixed;
+			traj_out.precision(7);
 			traj_out.open(data_location.str().c_str(), ios::app);
-   			traj_out.precision(10);
+
    			std::ofstream time_out;
 			time_out.open(times_location.str().c_str(), ios::app);
    			time_out.precision(13);
    			if (!traj_out.is_open() || !time_out.is_open())
    			{
-   				throw(std::runtime_error("Could not open file."));
+   				throw(std::runtime_error("Could not open output file."));
    			}
 			traj_out << lat << " " << lon << std::endl;
 			time_out << curTime << std::endl;
@@ -1005,8 +1008,8 @@ int main(int argc, char *argv[])
 {
 	std::cout << std::setprecision(10);
 	cout << "starting" << endl;
-	string dataPath = "data/raw/Standortverlauf.json";
-	string username = "Jan";
+	string dataPath = "data/raw/testing.json";
+	string username = "testing";
 	export_google_times(dataPath, username);
 	   return 0;
 
