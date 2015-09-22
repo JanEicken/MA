@@ -1,0 +1,2 @@
+python thresholdAlgo.py -i /home/jan/Desktop/Masterarbeit/trajcomputing_code/v_2/libtrajcomp-src/doc/md/data/processed/GoogleNow/Jan -o /home/jan/ -b 0.001
+
