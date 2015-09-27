@@ -12,7 +12,9 @@
         "type" : "still",
         "confidence" : 100
       } ]
-    }, {
+    },
+
+    {
       "timestampMs" : "1442312371771",
       "activities" : [ {
         "type" : "tilting",
@@ -58,7 +60,34 @@
         "confidence" : 100
       } ]
     } ]
-  }, {
+  },
+  {
+    "timestampMs" : "1442311861116",
+    "latitudeE7" : 481498184,
+    "longitudeE7" : 115596871,
+    "accuracy" : 40,
+    "activitys" : [ {
+      "timestampMs" : "1442311994724",
+      "activities" : [ {
+        "type" : "still",
+        "confidence" : 100
+      } ]
+    } ]
+  },
+  {
+    "timestampMs" : "1442311821116",
+    "latitudeE7" : 481498184,
+    "longitudeE7" : 115596871,
+    "accuracy" : 40,
+    "activitys" : [ {
+      "timestampMs" : "1442311994724",
+      "activities" : [ {
+        "type" : "still",
+        "confidence" : 100
+      } ]
+    } ]
+  },
+   {
     "timestampMs" : "1442311661056",
     "latitudeE7" : 481498184,
     "longitudeE7" : 115596871,

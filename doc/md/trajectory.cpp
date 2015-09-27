@@ -915,6 +915,7 @@ double longitude_converter(std::string lon)
 	return result;
 }
 
+//Eventuell noch alle hintereinander gleichauftretenden entfernen?
 void export_google_times(std::string &data_path, std::string &user_name)
 {
 	std::cout << std::fixed;
@@ -941,12 +942,50 @@ void export_google_times(std::string &data_path, std::string &user_name)
 
 			boost::property_tree::ptree pt;
 			read_json(data_path, pt);
+			double lastLat = 0.0;
+			double lastLon = 0.0;
            BOOST_FOREACH(boost::property_tree::ptree::value_type &v, pt.get_child("locations"))
            {
 			   std::string dateName = std::string(lastBuffer);
-			   std::string curTime = "";
 			   double lat = 0.0;
 			   double lon = 0.0;
+			   std::cout << "DATA"<<endl;
+
+			   std::cout << v.second.get<std::string>("latitudeE7")<<endl;
+			    std::cout << v.second.get<std::string>("longitudeE7")<<endl;
+
+			   lat = latitude_converter(v.second.get<std::string>("latitudeE7"));
+			   lon = longitude_converter(v.second.get<std::string>("longitudeE7"));
+
+			   if(lat == lastLat && lon == lastLon) {
+				   std::cout << "found same lat lon " << lat << " " << lon << endl;
+				   continue;
+			   }
+
+			   std::string curTimeRaw = v.second.get<std::string>("timestampMs");
+			   curTimeRaw = curTimeRaw.substr(0,9);
+			   std::cout << curTimeRaw <<endl;;
+
+			   std::stringstream tmp(curTimeRaw);
+			   long rawtime;
+			   tmp >> rawtime;
+			   const time_t tmptime = (const time_t) rawtime;
+			   struct tm * curTime;
+			   curTime = localtime(&tmptime);
+
+			   char curBuffer[256];
+			   strftime(curBuffer, sizeof(curBuffer), "%d", curTime);
+			   if(std::string(curBuffer) != std::string(lastBuffer)) {
+				   strcpy(lastBuffer, curBuffer);
+				   dateName = std::string(curBuffer);
+				   //lastBuffer = curBuffer;
+				   cout << "Found new date" << endl;
+				   i++;
+			   }
+
+			 /*  lat = latitude_converter(v.second.get<std::string>("latitudeE7"));
+			   lon = longitude_converter(v.second.get<std::string>("longitudeE7"));
+
 			   BOOST_FOREACH(boost::property_tree::ptree::value_type &p, v.second)
                {
 				   if(p.first == "timestampMs") {
@@ -973,6 +1012,7 @@ void export_google_times(std::string &data_path, std::string &user_name)
 					   lon = longitude_converter(p.second.get_value<std::string>());
 				   }
 			   }
+			   */
 			   //Write to files
 			data_location << data_save_path  << i << ".csv";
 			times_location << time_save_path << i << ".csv";
@@ -990,11 +1030,13 @@ void export_google_times(std::string &data_path, std::string &user_name)
    				throw(std::runtime_error("Could not open output file."));
    			}
 			traj_out << lat << " " << lon << std::endl;
-			time_out << curTime << std::endl;
+			time_out << curTimeRaw << std::endl;
 			data_location.str("");
 			times_location.str("");
 			traj_out.close();
 			time_out.close();
+			lastLat = lat;
+			lastLon = lon;
            }
 
        }
@@ -1007,6 +1049,7 @@ void export_google_times(std::string &data_path, std::string &user_name)
 int main(int argc, char *argv[])
 {
 	std::cout << std::setprecision(10);
+	/*
 	cout << "starting" << endl;
 	string dataPath = "data/raw/testing.json";
 	string username = "testing";
@@ -1051,14 +1094,14 @@ int main(int argc, char *argv[])
 
 	persistence_algo_off(online, 25.0);
 	return 0;
-
+	*/
 	trajectory test(2);
 	vector<double> ti(1);
 	trajectory threshold(2);
 	//Muss im Format - {longitute latitude} - sein
-	loadXY("../../python-server-sample/TestTraj.csv", test);
+	loadXY("data/processed/GoogleNow/Jan/1.csv", test);
 	//Muss im Format - {Millisekunden} - sein
-	loadTime("../../python-server-sample/TestTrajTimes.csv", ti);
+	loadTime("data/processed/GoogleNow/Jan/times/1.csv", ti);
 	threshold = trajcomp::threshold_sampling(test, ti, 0.7, 20.0);
 	cout << "original size: " << test.size() << endl;
 

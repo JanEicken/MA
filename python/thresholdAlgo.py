@@ -36,8 +36,9 @@ def main(argv):
 
     for i in os.listdir(inputfolder):
         if(i.endswith(".csv")):
+            print i
             newfolder = i.split(".")
-            R = trajcomp.threshold_sampling(float(velocityThresh), float(orientationThresh),inputfolder+i,
+            R = trajcomp.threshold(float(velocityThresh), float(orientationThresh),inputfolder+i,
             inputfolder+"times/"+i)
             # Do plots on result
             print R

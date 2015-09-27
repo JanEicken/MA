@@ -34,4 +34,4 @@
 # de.lmu.ifi.dbs.elki.workflow.EvaluationStep
 # -evaluator AutomaticEvaluation
 ###############################################################
-# de.lmu.ifi.dbs.elki.result.BasicResult@c1a890f
+# de.lmu.ifi.dbs.elki.result.BasicResult@221c3dfe

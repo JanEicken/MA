@@ -340,7 +340,7 @@
 
         //map.graphics.clear();
         $.get( myURL, function( data ) {
-
+            map.graphics.remove(map.graphics.graphics[map.graphics.graphics.length -1])
 
             pa = JSON.parse(data);
             transformedPoints=[];
@@ -366,7 +366,7 @@
         //map.graphics.clear();
 
         $.get( myURL, function( data ) {
-
+            map.graphics.remove(map.graphics.graphics[map.graphics.graphics.length -1])
             pa = JSON.parse(data);
             transformedPoints=[];
             //alert('h');
@@ -402,6 +402,7 @@
             rawTimes=[];
             //alert('h');
             var sr = map.spatialReference;
+            TIMES = JSON.parse($("#times").val());
             for(index =0; index < pa.length; index++)
             {
                 rawCoordinates[rawCoordinates.length] = pa[index][0] + ' ' + pa[index][1];
@@ -409,8 +410,13 @@
                 p = ToWebMercator([pa[index][0],pa[index][1]]);
                 var point = new Point([p[1], p[0]], sr);
                 map.graphics.add(new Graphic(point, pointSymbol2));
-                console.log(ti[index]);
+
+                //Write times
+
+                TIMES[TIMES.length] = ti[index];
+
             }
+            $('#times').val(JSON.stringify(TIMES));
             $("#coordinates").val(JSON.stringify(rawCoordinates));
               //alert(JSON.stringify(transformedPoints));
             //var sr = //new esri.SpatialReference({wkid: 4326});
@@ -426,7 +432,7 @@
                     +"&times="+encodeURIComponent($("#times").val());
 
         $.get( myURL, function( data ) {
-
+            map.graphics.remove(map.graphics.graphics[map.graphics.graphics.length -1])
             pa = JSON.parse(data);
             transformedPoints=[];
             //alert('h');

@@ -223,19 +223,6 @@ trajcomp_size(PyObject *self, PyObject *args)
 	return Py_BuildValue("i", trajectories.size());
 }
 
-
-//TODO: Function to use trajcomp threshold guided sampling
-// Input: Path to trajectory
-static PyObject *
-trajcomp_threshold_sampling(PyObject *self, PyObject *args)
-{
-  const char *s;
-	if(!PyArg_ParseTuple(args, "s", &s))
-			return NULL;
-
-	return Py_BuildValue("i", trajectories.size());
-}
-
 // Input: Path to trajectory, epsilon
 static PyObject *
 trajcomp_douglas_peucker_online(PyObject *self, PyObject *args)
@@ -425,7 +412,7 @@ static PyMethodDef TrajcompMethods[] = {
     {"geolife",  	trajcomp_geolife, METH_VARARGS, "Load Geolife Data."},
     {"pld",  	trajcomp_point_segment, METH_VARARGS, "Point Segment Distance [debug]."},
     {"size",  	trajcomp_size, METH_VARARGS, "Count trajectories."},
-	{"threshold_sampling", trajcomp_threshold_sampling, METH_VARARGS, "Use threshold guided sampling on input trajectory"},
+	{"threshold_sampling", trajcomp_threshold, METH_VARARGS, "Use threshold guided sampling on input trajectory"},
 	{"dbscan", trajcomp_DBSCAN_segmentation, METH_VARARGS, "DBSCAN segmentation on input trajectory path"},
 	{"resample", trajcomp_resample, METH_VARARGS, "Resample input trajectory"},
 	{"threshold", trajcomp_threshold, METH_VARARGS, "Calculate threshold sampling trajectory"},

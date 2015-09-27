@@ -95,6 +95,8 @@ def douglas_peucker(d, e):
 
 def resample_traj(d, h):
 	r = trajcomp.resample(d, h, resample_location);
+	print "got back:"
+	print r
 	#Delete created files
 	#for the_file in os.listdir(resample_location):
 	#    file_path = os.path.join(resample_location, the_file)
@@ -157,7 +159,7 @@ class MyTCPHandler(SocketServer.StreamRequestHandler):
 			if C[0] == "THRESHOLD":
 				print "Threshold backend";
 				print C[1:];
-				T = trajcomp.threshold(float(C[1]), float(C[2]));
+				T = trajcomp.threshold(float(C[1]), float(C[2]), "../TestTraj.csv", "../TestTrajTimes.csv");
 				self.wfile.write(json.dumps(T)+"\n");
 			if self.data=="HELO":
 				self.wfile.write("HELO too\n");

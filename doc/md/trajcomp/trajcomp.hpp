@@ -695,8 +695,8 @@ class threshold_sampling_impl
 			if(delta_lon*(180/M_PI) > 180) {
 				delta_lon = fmod(delta_lon*(180/M_PI), 180.0) *(M_PI/180);
 			}
-			double orientation = atan2(abs(lon1-lon2) ,log(tan((lat1/2) + (M_PI/4)) / tan((lat2/2) + (M_PI/4))));
-			//cout << "orientation: " << orientation*(180/PI) << endl;
+			double orientation = atan2(abs(lon1-lon2) ,log(tan((lat2/2) + (M_PI/4)) / tan((lat1/2) + (M_PI/4))));
+			cout << "orientation: " << orientation*(180/M_PI) << endl;
 
 			velocity_vector.push_back(orientation);
 			return velocity_vector;
@@ -722,6 +722,7 @@ class threshold_sampling_impl
 				//START Calculate upper and lower angle and radius for trajectory and sample based last two points.
 
 				//For velocity vector of trajectory, take last 2 elements in original trajectory
+				cout << "velocity for: " << i << endl;
 				vector<double> velocity_vector_traj = calc_velocity_vector(traj[i-2][0], traj[i-1][0],
 													traj[i-2][1], traj[i-1][1], times[i-2], times[i-1]);
 				//For velocity vector of sample, take last 2 elements in result trajectory

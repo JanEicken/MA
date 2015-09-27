@@ -25,6 +25,7 @@ def curvature(b) :
     d2y_dt2 = numpy.gradient(dy_dt)
     curvature = numpy.abs(d2x_dt2 * dy_dt - dx_dt * d2y_dt2) / numpy.sqrt((dx_dt * dx_dt + dy_dt * dy_dt)**3)
     curv = curvature *(180/numpy.pi)
+    print "CURVS"
     print curv
     return curv
 
@@ -35,13 +36,51 @@ def calcCurvature(coords_file):
     with open(coords_file) as f:
         lines = f.read().splitlines()
         curvs = []
-        for l in range(0, len(lines)-1):
+
+        for l in range(0, len(lines)):
             #print "Line::"
-            if l == 0:
+            print "line"
+            print lines[l]
+            traj = lines[l].split(' ')
+
+            res.append([float(traj[0]), float(traj[1])])
+
+            if l == 0 or l == len(lines)-1:
                 curv = 0.0
                 continue
-            traj = lines[l].split(' ')
-            res.append([float(traj[0]), float(traj[1])])
+            prev = lines[l-1].split(' ');
+            nex = lines[l+1].split(' ');
+
+
+            xCoefficientArray = [float(traj[0]) - float(prev[0]), float(traj[1]) - float(prev[1])]
+            yCoefficientArray = [float(nex[0]) - float(prev[0]), float(nex[1]) - float(prev[1])]
+
+            coefficientArray = numpy.array([xCoefficientArray,yCoefficientArray])
+            constantArray = numpy.array([(pow(float(traj[0]),2) + pow(float(traj[1]),2) - pow(float(prev[0]),2) - pow(float(prev[1]),2))/2, (pow(float(nex[0]),2) + pow(float(nex[1]),2) - pow(float(prev[0]),2) - pow(float(prev[1]),2))/2])
+            try:
+                center = numpy.linalg.solve(coefficientArray, constantArray)
+
+                #print "center: " + str(center)
+                radius_prev = math.sqrt(pow(float(prev[0])-center[0],2) + pow(float(prev[1])-center[1],2))
+                radius_cur = math.sqrt(pow(float(traj[0])-center[0],2) + pow(float(traj[1])-center[1],2))
+                radius_nex = math.sqrt(pow(float(nex[0])-center[0],2) + pow(float(nex[1])-center[1],2))
+
+                #print "Radius: " + str(radius)
+                curv = 1/radius_prev
+                print "last curv: " + str((1/radius_prev)% 360.0)+ " cur curv " + str((1/radius_cur)% 360.0)  + " nex curv" + str((1/radius_nex)% 360.0)
+                #print "curv: " + str(curv)
+                #print math.sqrt(pow(p_prev[0]-center[0],2) + pow(p_prev[1]-center[1],2))
+                #print math.sqrt(pow(float(traj[0])-center[0],2) + pow(float(traj[1])-center[1],2))
+                #print math.sqrt(pow(float(nex[0])-center[0],2) + pow(p_next[1]-center[1],2))
+
+            except:
+                print "Straight line"
+                curv = 0.0
+            curvs.append(curv)
+
+            continue
+
+
             traj_last = lines[l-1].split(' ')
             traj_next = lines[l+1].split(' ')
             #print "Cur point " + ', '.join(traj)
@@ -84,29 +123,29 @@ def calcCurvature(coords_file):
 
             curv = 0.0;
             #print p_prev[0][2:]
-            #xCoefficientArray = [float(traj[0]) - p_prev[0], float(traj[1]) - p_prev[1]]
-            #yCoefficientArray = [p_next[0] - p_prev[0], p_next[1] - p_prev[1]]
+            xCoefficientArray = [float(traj[0]) - p_prev[0], float(traj[1]) - p_prev[1]]
+            yCoefficientArray = [p_next[0] - p_prev[0], p_next[1] - p_prev[1]]
 
-            #coefficientArray = numpy.array([xCoefficientArray,yCoefficientArray])
-            #constantArray = numpy.array([(pow(float(traj[0]),2) + pow(float(traj[1]),2) - pow(p_prev[0],2) - pow(p_prev[1],2))/2, (pow(p_next[0],2) + pow(p_next[1],2) - pow(p_prev[0],2) - pow(p_prev[1],2))/2])
-            #try:
-            #    center = numpy.linalg.solve(coefficientArray, constantArray)
+            coefficientArray = numpy.array([xCoefficientArray,yCoefficientArray])
+            constantArray = numpy.array([(pow(float(traj[0]),2) + pow(float(traj[1]),2) - pow(p_prev[0],2) - pow(p_prev[1],2))/2, (pow(p_next[0],2) + pow(p_next[1],2) - pow(p_prev[0],2) - pow(p_prev[1],2))/2])
+            try:
+                center = numpy.linalg.solve(coefficientArray, constantArray)
 
-            #    print "center: " + str(center)
-            #    radius = math.sqrt(pow(p_prev[0]-center[0],2) + pow(p_prev[1]-center[1],2))
-            #    print "Radius: " + str(radius)
-            #    curv = 1/radius
-            #    print "curv: " + str(curv)
+                #print "center: " + str(center)
+                radius = math.sqrt(pow(p_prev[0]-center[0],2) + pow(p_prev[1]-center[1],2))
+                #print "Radius: " + str(radius)
+                curv = 1/radius
+                #print "curv: " + str(curv)
                 #print math.sqrt(pow(p_prev[0]-center[0],2) + pow(p_prev[1]-center[1],2))
                 #print math.sqrt(pow(float(traj[0])-center[0],2) + pow(float(traj[1])-center[1],2))
                 #print math.sqrt(pow(p_next[0]-center[0],2) + pow(p_next[1]-center[1],2))
 
-            #except:
-            #    print "Straight line"
-            #    curv = 0.0
+            except:
+                print "Straight line"
+                curv = 0.0
             curvs.append(curv)
     print "---------------------------------------------------------"
-    print res
+    print curvs
     print "---------------------------------------------------------"
     curvature(res)
     return curvs;
