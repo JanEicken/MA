@@ -49,6 +49,9 @@ def get_threshold_data(vel, orientation):
 	a = backendclient.backend_threshold_data(vel, orientation);
 	return json.dumps(a);
 
+def get_threshold_data(pers):
+	a = backendclient.backend_persistence_data(pers);
+	return json.dumps(a);
 
 cfg_width=500
 cfg_height=500

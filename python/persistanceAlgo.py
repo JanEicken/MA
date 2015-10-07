@@ -14,7 +14,7 @@ def curvature(b) :
     c = []
     for i in b:
         c.append([i[0]*(numpy.pi/180), i[1]*(numpy.pi/180)])
-    #print c
+    print c
     #print "Do another one"
     a = numpy.array(c)
     dx_dt = numpy.gradient(a[:, 0])
@@ -23,12 +23,15 @@ def curvature(b) :
     d2s_dt2 = numpy.gradient(ds_dt)
     d2x_dt2 = numpy.gradient(dx_dt)
     d2y_dt2 = numpy.gradient(dy_dt)
-    curvature = numpy.abs(d2x_dt2 * dy_dt - dx_dt * d2y_dt2) / numpy.sqrt((dx_dt * dx_dt + dy_dt * dy_dt)**3)
-    curv = curvature *(180/numpy.pi)
+    curvature = numpy.abs(d2x_dt2 * dy_dt - dx_dt * d2y_dt2) / (dx_dt * dx_dt + dy_dt * dy_dt)**1.5
+    curv = curvature 
     print "CURVS"
     print curv
     return curv
 
+def curvatur(b):
+    2*((x2-x1)*(y3-y2)-(y2-y1)*(x3-x2)) / sqrt(
+        ((x2-x1)^2+(y2-y1)^2)*((x3-x2)^2+(y3-y2)^2)*((x1-x3)^2+(y1-y3)^2) );
 
 def calcCurvature(coords_file):
     h = 0.000001
@@ -44,7 +47,7 @@ def calcCurvature(coords_file):
             traj = lines[l].split(' ')
 
             res.append([float(traj[0]), float(traj[1])])
-
+            continue
             if l == 0 or l == len(lines)-1:
                 curv = 0.0
                 continue
@@ -144,6 +147,8 @@ def calcCurvature(coords_file):
                 print "Straight line"
                 curv = 0.0
             curvs.append(curv)
+    print "to calculate: "
+    print res
     print "---------------------------------------------------------"
     print curvs
     print "---------------------------------------------------------"
@@ -173,6 +178,8 @@ def main(argv):
         elif opt in("-b"):
             beta = arg
 
+    calcCurvature("/home/jan/Desktop/Masterarbeit/trajcomputing_code/v_2/libtrajcomp-src/python/TestTraj.csv")
+    return;
     if not os.path.exists(inputfolder):
         print "inputfolder does not exist"
         return;

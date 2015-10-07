@@ -1,5 +1,6 @@
 import trajcomp;
 import sys, getopt, os;
+import matplotlib.pyplot as pl
 
 elki_location = "/home/jan/elki.jar";
 def main(argv):

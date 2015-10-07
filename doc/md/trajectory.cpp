@@ -108,11 +108,46 @@ trajectory density_segmentation(trajectory &traj, double max_distance)
 * Der Abstand h sollte möglich klein gewählt werden
 *
 */
-template<class TrajectoryType, class DistanceType=double>
-TrajectoryType calc_curvatur(TrajectoryType &traj, DistanceType h)
+template<class TrajectoryType, class CurvType>
+void calc_curvature(TrajectoryType &traj, CurvType &curvs)
 {
-	TrajectoryType res = TrajectoryType(2);
-	for(size_t i = 0; i<traj.size(); i++) {
+	curvs.clear();
+
+	int first_orientation = (int)  fmod(trajcomp::tools::calc_orientation(traj[0][1], traj[1][1], traj[0][0], traj[1][0])+360, 360);
+	curvs.push_back({first_orientation,0,0});
+
+	for(size_t i = 1; i < traj.size()-1; i++) {
+
+		int last_orientation = (int) fmod(trajcomp::tools::calc_orientation(traj[i-1][1], traj[i][1], traj[i-1][0], traj[i][0])+360, 360);
+		int cur_orientation = (int) fmod(trajcomp::tools::calc_orientation(traj[i][1], traj[i+1][1], traj[i][0], traj[i+1][0])+360, 360);
+		cout << "last orientation: " << last_orientation << endl;
+		cout << "next orientation: " << cur_orientation << endl;
+		int new_curv = 0;
+		int opposite_orientation = (last_orientation+180) % 360;
+		if(last_orientation > 180) {
+			if(cur_orientation > opposite_orientation && cur_orientation < last_orientation) {
+				new_curv = last_orientation - cur_orientation;
+			} else {
+				new_curv = -((cur_orientation - last_orientation + 360)%360);
+			}
+		} else {
+			if(cur_orientation < opposite_orientation && cur_orientation > last_orientation) {
+				new_curv = -(cur_orientation - last_orientation);
+			} else {
+				new_curv = (last_orientation - cur_orientation + 360) % 360;
+			}
+		}
+		cout << "New curv: " << new_curv << endl;
+		curvs.push_back({new_curv, 0, 0});
+	}
+
+	curvs.push_back({0,0,0});
+	cout << "PRINT CURVS: " << curvs.size() << endl;
+	for(size_t j=0; j < curvs.size(); j++) {
+		cout << j << ": " << curvs[j][0] << endl;
+	}
+
+	/*for(size_t i = 0; i<traj.size(); i++) {
 		if(i == 0) {
 			//Berechne nächsten Punkt mit Abstand h
 			double d_next = sqrt(pow(traj[i+1][0]-traj[i][0],2) + pow(traj[i+1][1]-traj[i][1],2));
@@ -186,7 +221,7 @@ TrajectoryType calc_curvatur(TrajectoryType &traj, DistanceType h)
 
 		}
 
-	}
+	}*/
 
 }
 
@@ -354,9 +389,6 @@ void calc_bars(ElementType &curv, IndexType minima, BarType &bars)
 		vector<size_t> new_comp(3);
 		new_comp.clear();
 		new_comp.push_back(minima[i]);
-		new_comp.push_back(minima[i]);
-		new_comp.push_back(minima[i]);
-		new_comp.push_back(minima[i]);
 		bool foundOld = false;
 		bool foundMaxima = false;
 
@@ -364,7 +396,7 @@ void calc_bars(ElementType &curv, IndexType minima, BarType &bars)
 		for(size_t n = 0; n < components.size(); n++) {
 			//cout << "Component: " << curv[components[n][0]][0] << " minimum: " << curv[minima[i]][0] << endl;
 			if(components[n][0] == minima[i]) {
-				//cout << "Found component with minimum" <<  curv[minima[i]][0] << endl;
+				cout << "Found component with minimum" <<  curv[minima[i]][0] << endl;
 				new_comp.assign(components[n].begin(), components[n].end());
 				foundOld = true;
 				components.erase(components.begin() + n);
@@ -373,12 +405,12 @@ void calc_bars(ElementType &curv, IndexType minima, BarType &bars)
 
 		calc_component(curv, new_comp);
 		//denotates if a component with same maximum was found
-		//cout << "searching for components with same maximum..." << endl;
+		cout << "searching for components with same maximum..." << endl;
 		for(size_t j = 0; j < components.size(); j++) {
 			//cout << "New comp left: " << new_comp[1] << " right: " << new_comp[2] << endl;
 			//cout << "Old comp left: " << components[j][1] << " right: " << components[j][2] << endl;
 			if(new_comp[3] == components[j][3]) {
-				//cout << "found same maximum: " << curv[new_comp[0]][0] << " and " << curv[components[j][0]][0] << endl;
+				cout << "found same maximum: " << curv[new_comp[0]][0] << " and " << curv[components[j][0]][0] << endl;
 
 
 				if(curv[new_comp[0]][0] < curv[components[j][0]][0]) {
@@ -420,8 +452,13 @@ void calc_bars(ElementType &curv, IndexType minima, BarType &bars)
 		}
 		if(!foundMaxima) {
 			cout << "No component found, add new one: " << curv[new_comp[0]][0] << endl;
+			for(size_t ti = 0; ti < components.size(); ti++) {
+				cout << "compnent: " << components[i][0] << " : " << components[i][1] << endl;
+			}
 			components.push_back(new_comp);
+			cout << "pushed back" << endl;
 		}
+		cout << "After maxima" << endl;
 		if((i == minima.size()-1) && (components.size() > 1)) {
 			cout << "last minimum reached, components left" << endl;
 			//Set possible maximum Minimum to minimal Minimum
@@ -435,9 +472,11 @@ void calc_bars(ElementType &curv, IndexType minima, BarType &bars)
 			cout << "insert min: " << curv[maxMin][0] << endl;
 			minima.insert(minima.begin()+i+1, maxMin);
 		}
+		cout << "After minima" << endl;
 		//cout << endl;
 
 	}
+	cout << "alle minima gelesen" << endl;
 	//Add last component as bar
 	//bars.push_back({components[components.size()-1][0], components[components.size()-1][3]});
 	for(size_t k = 0; k < components.size(); k++) {
@@ -485,7 +524,10 @@ TrajectoryType persistence_algo_off(TrajectoryType &traj, ThresholdType beta)
 
 	//TODO: delete, only for testing
 	curvatures curv(3);
-	initialiseTestVector(curv);
+	curv.clear();
+	calc_curvature(traj, curv);
+	//initialiseTestVector(curv);
+
 	//Schritt 2: Berechne maxima und minima
 	vector<size_t> minima;
 	calc_extrema(curv, minima);
@@ -503,8 +545,9 @@ TrajectoryType persistence_algo_off(TrajectoryType &traj, ThresholdType beta)
 	//beta-persistent simplification
 	cout << "bars size: " << bars.size() << endl;
 	for(size_t i = 0; i < bars.size(); i++) {
-		if((abs(curv[bars[i][0]][0]) + abs(curv[bars[i][1]][0])) < beta) {
-			cout << "Beta smaller: " << abs(curv[bars[i][0]][0]) + abs(curv[bars[i][1]][0]) << endl;
+		if(abs(curv[bars[i][0]][0] - curv[bars[i][1]][0]) < beta) {
+			cout << "Beta smaller: " << curv[bars[i][0]][0]+ curv[bars[i][1]][0] << endl;
+			//TODO: NOISE point, könnte wichtig sein
 			bars.erase(bars.begin() + i);
 			i--;
 		} else {
@@ -529,6 +572,7 @@ TrajectoryType persistence_algo_off(TrajectoryType &traj, ThresholdType beta)
 		cout << curv[res[j]][0] << endl;
 	}
 
+	//Special case for start and end point
 	if(!startPoint) {
 		//Check points after start point and insert
 		size_t toInsert = 1;
@@ -586,13 +630,9 @@ TrajectoryType persistence_algo_off(TrajectoryType &traj, ThresholdType beta)
 		res.insert(res.end(), curv.size()-1);
 	}
 
-
-	//res.insert(res.begin(), 0);
-	//res.insert(res.end(), curv.size()-1);
-
-	cout << endl << endl;
-
+	TrajectoryType resTraj(2);
 	for(size_t n = 0; n < res.size(); n++) {
+
 		cout << curv[res[n]][0] << endl;
 	}
 
@@ -921,7 +961,6 @@ void export_google_times(std::string &data_path, std::string &user_name)
 	std::cout << std::fixed;
 	try
        {
-
 		   time_t rawtime;
 		   time (&rawtime);
 		   struct tm * lastTime;
@@ -944,27 +983,35 @@ void export_google_times(std::string &data_path, std::string &user_name)
 			read_json(data_path, pt);
 			double lastLat = 0.0;
 			double lastLon = 0.0;
+			std::string teststring = "1439596729";
+			std::string testr2 = "144354549";
+			int it7 = 0;
            BOOST_FOREACH(boost::property_tree::ptree::value_type &v, pt.get_child("locations"))
            {
+			   it7++;
 			   std::string dateName = std::string(lastBuffer);
-			   double lat = 0.0;
-			   double lon = 0.0;
-			   std::cout << "DATA"<<endl;
+			   //std::cout << "DATA"<<endl;
 
-			   std::cout << v.second.get<std::string>("latitudeE7")<<endl;
-			    std::cout << v.second.get<std::string>("longitudeE7")<<endl;
+			   //std::cout << v.second.get<std::string>("latitudeE7")<<endl;
+			    //std::cout << v.second.get<std::string>("longitudeE7")<<endl;
 
-			   lat = latitude_converter(v.second.get<std::string>("latitudeE7"));
-			   lon = longitude_converter(v.second.get<std::string>("longitudeE7"));
+			   double lat = latitude_converter(v.second.get<std::string>("latitudeE7"));
+			   double lon = longitude_converter(v.second.get<std::string>("longitudeE7"));
 
 			   if(lat == lastLat && lon == lastLon) {
-				   std::cout << "found same lat lon " << lat << " " << lon << endl;
+				   //std::cout << "found same lat lon " << lat << " " << lon << endl;
 				   continue;
 			   }
 
 			   std::string curTimeRaw = v.second.get<std::string>("timestampMs");
-			   curTimeRaw = curTimeRaw.substr(0,9);
-			   std::cout << curTimeRaw <<endl;;
+			   curTimeRaw = curTimeRaw.substr(0,10);
+			   if(curTimeRaw == teststring) {
+				   std::cout << curTimeRaw << endl;
+			   }
+			   if(curTimeRaw == testr2) {
+				   std::cout << curTimeRaw << endl;
+			   }
+			   //std::cout << curTimeRaw <<endl;;
 
 			   std::stringstream tmp(curTimeRaw);
 			   long rawtime;
@@ -979,40 +1026,10 @@ void export_google_times(std::string &data_path, std::string &user_name)
 				   strcpy(lastBuffer, curBuffer);
 				   dateName = std::string(curBuffer);
 				   //lastBuffer = curBuffer;
-				   cout << "Found new date" << endl;
+				   cout << "Found new date: " << dateName << " : " << i << endl;
 				   i++;
 			   }
 
-			 /*  lat = latitude_converter(v.second.get<std::string>("latitudeE7"));
-			   lon = longitude_converter(v.second.get<std::string>("longitudeE7"));
-
-			   BOOST_FOREACH(boost::property_tree::ptree::value_type &p, v.second)
-               {
-				   if(p.first == "timestampMs") {
-					   curTime = p.second.get_value<std::string>().substr(0,10);
-					   std::stringstream tmp(curTime);
-					   long rawtime;
-					   tmp >> rawtime;
-					   const time_t tmptime = (const time_t) rawtime;
-					   struct tm * curTime;
-					   curTime = localtime(&tmptime);
-
-					   char curBuffer[256];
-					   strftime(curBuffer, sizeof(curBuffer), "%d", curTime);
-					   if(std::string(curBuffer) != std::string(lastBuffer)) {
-						   strcpy(lastBuffer, curBuffer);
-						   dateName = std::string(curBuffer);
-						   //lastBuffer = curBuffer;
-						   cout << "Found new date" << endl;
-						   i++;
-					   }
-				   } else if (p.first == "latitudeE7") {
-					   lat = latitude_converter(p.second.get_value<std::string>());
-				   } else if (p.first == "longitudeE7") {
-					   lon = longitude_converter(p.second.get_value<std::string>());
-				   }
-			   }
-			   */
 			   //Write to files
 			data_location << data_save_path  << i << ".csv";
 			times_location << time_save_path << i << ".csv";
@@ -1038,23 +1055,32 @@ void export_google_times(std::string &data_path, std::string &user_name)
 			lastLat = lat;
 			lastLon = lon;
            }
-
+ cout << "IT: " << it7 << endl;
        }
        catch (std::exception const& e)
        {
            std::cerr << e.what() << std::endl;
        }
+
 }
 
+
+//103511 103511
 int main(int argc, char *argv[])
 {
 	std::cout << std::setprecision(10);
-	/*
+	trajectory trajcurv(2);
+	string pathToDataCurv = "../../python-server-sample/TestTraj.csv";
+	loadXY(pathToDataCurv, trajcurv);
+	persistence_algo_off(trajcurv, 10.0);
+
+	return 0;
+
 	cout << "starting" << endl;
-	string dataPath = "data/raw/testing.json";
-	string username = "testing";
+	string dataPath = "data/raw/Standortverlauf.json";
+	string username = "Jan";
 	export_google_times(dataPath, username);
-	   return 0;
+	return 0;
 
 	trajectory traj(2);
 	vector<double> times(1);
@@ -1094,7 +1120,7 @@ int main(int argc, char *argv[])
 
 	persistence_algo_off(online, 25.0);
 	return 0;
-	*/
+
 	trajectory test(2);
 	vector<double> ti(1);
 	trajectory threshold(2);

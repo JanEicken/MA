@@ -12,6 +12,7 @@
 #include<algorithm>
 #include<stdint.h>
 #include<cmath>
+#include<iomanip>
 
 //#include<boost/filesystem.hpp>
 
@@ -147,6 +148,52 @@ namespace trajcomp
 			return bearing;
 		}
 
+		double calc_orientation(double lon1, double lon2, double lat1, double lat2)
+		{
+			lon1 = trajcomp::tools::toRadiant(lon1);
+			lon2 = trajcomp::tools::toRadiant(lon2);
+			lat1 = trajcomp::tools::toRadiant(lat1);
+			lat2 = trajcomp::tools::toRadiant(lat2);
+			//http://www.sunearthtools.com/tools/distance.php#txtDist_3
+			double delta_lon = lon2-lon1;
+
+			if(abs(delta_lon) > M_PI) {
+				if(delta_lon > 0.0) {
+					delta_lon = -(2.0 * M_PI - delta_lon);
+				} else {
+					delta_lon = (2.0 * M_PI -delta_lon);
+				}
+			}
+
+			double delta_phi = log(tan((lat2/2) + (M_PI/4)) / tan((lat1/2) + (M_PI/4)));
+
+			double orientation = atan2(delta_lon , delta_phi);
+			//orientation = fmod(trajcomp::tools::toDegree(orientation)+360.0, 360.0);
+			return trajcomp::tools::toDegree(orientation);
+		}
+
+		/*
+		* Berechnet den Geschwindigkeitsvektor zwischen zwei Punkten
+		* returns vector<velocity, orientation>
+		*/
+		vector<double> calc_velocity_vector(double lon1, double lon2, double lat1, double lat2, double t1, double t2)
+		{
+
+
+			vector<double> velocity_vector;
+			//velocity
+			//cout << "P1: " << lon1 << "|" << lat1 << "|" << t1 << " - P2: " << lon2 << "|" << lat2 << "|" << t2 << endl;
+			double mps = trajcomp::tools::haversine1(lat1, lat2, lon1, lon2) / ((t2 - t1) / 1000.0);
+			//cout << "velocity: " << mps << endl;
+
+			velocity_vector.push_back(mps);
+
+			double orientation = trajcomp::tools::calc_orientation(lon1, lon2, lat1, lat2);
+
+			velocity_vector.push_back(orientation);
+			return velocity_vector;
+		}
+
 		template<class ttime>
 		typename ttime::value_type calc_min_time(ttime &times)
 		{
@@ -160,6 +207,29 @@ namespace trajcomp
 			std::cout << "MIN TIME: " << min_time/1000 << endl;
 			return min_time/1000;
 		}
+
+		/*
+		*  Get Noise points by comparing all values of original and segmented
+		*  trajectories. They have same ordering, so when a value of segmented
+		*  is not in original, it is noise.
+		*/
+		template<class ttraj>
+		ttraj getNoisePoints(ttraj &original, ttraj &segmented)
+		{
+			float eps = 0.00000001;
+			ttraj noise(2);
+			for(size_t i = 0; i < segmented.size(); i++) {
+				if((fabs(segmented[i][0] - original[i][0]) < eps) &&
+					(fabs(segmented[i][1] - original[i][1]) < eps)){
+						continue;
+				} else {
+					noise.push_back({original[i][0], original[i][1]});
+					original.erase(original.begin()+i);
+				}
+			}
+			return noise;
+		}
+
 
 		/**
 		* Read data from file, resample, write to given location and return trajectory
@@ -632,8 +702,9 @@ class DBSCAN_segmentation_impl
 			}
 
 			//Letzter Punkt in Trajektorie muss im Ergebnis sein
-			//TODO Überprüfen, ob er bereits im Ergebnis ist
-			resIDs.push_back(traj.size()-1);
+			if(std::find(std::begin(resIDs), std::end(resIDs), traj.size()-1) != std::end(resIDs)) {
+				resIDs.push_back(traj.size()-1);
+			}
 			//Delete cluster data
 			std::sort(resIDs.begin(), resIDs.end());
 			for(int i = 0; i < resIDs.size(); i++) {
@@ -658,7 +729,7 @@ TrajectoryType DBSCAN_segmentation(TrajectoryType &traj, double epsilon,
 {
 	DBSCAN_segmentation_impl<TrajectoryType, double, int> dbs;
 	//boost::filesystem::remove_all("clustering/");
-	//system("exec rm -r clustering/*");
+	system("exec rm -r clustering/*");
 	TrajectoryType ret = dbs(traj,epsilon, minPts, dataName, pathToData, path_to_elki);
 
 	//TODO: What to do with noise points?
@@ -673,38 +744,11 @@ template <class TrajectoryType, class TimesType, class ThresholdType=double>
 class threshold_sampling_impl
 {
 	public:
-		/*
-		* Berechnet den Geschwindigkeitsvektor zwischen zwei Punkten
-		* returns vector<velocity, orientation>
-		*/
-		vector<double> calc_velocity_vector(double lon1, double lon2, double lat1, double lat2, double t1, double t2)
-		{
-			vector<double> velocity_vector;
-			//velocity
-			//cout << "P1: " << lon1 << "|" << lat1 << "|" << t1 << " - P2: " << lon2 << "|" << lat2 << "|" << t2 << endl;
-			double mps = trajcomp::tools::haversine1(lat1, lat2, lon1, lon2) / ((t2 - t1) / 1000.0);
-			//cout << "velocity: " << mps << endl;
-
-			velocity_vector.push_back(mps);
-
-			//orientation
-			//double orientation = atan2((y2-y1),(x2-x1));
-
-			//http://www.sunearthtools.com/tools/distance.php#txtDist_3
-			double delta_lon = abs(lon1-lon2);
-			if(delta_lon*(180/M_PI) > 180) {
-				delta_lon = fmod(delta_lon*(180/M_PI), 180.0) *(M_PI/180);
-			}
-			double orientation = atan2(abs(lon1-lon2) ,log(tan((lat2/2) + (M_PI/4)) / tan((lat1/2) + (M_PI/4))));
-			cout << "orientation: " << orientation*(180/M_PI) << endl;
-
-			velocity_vector.push_back(orientation);
-			return velocity_vector;
-		}
 
 		TrajectoryType operator()(TrajectoryType &traj, TimesType &times,
 			ThresholdType velocity_thresh, ThresholdType orientation_thresh)
 		{
+			std::cout << std::setprecision(10);
 			TrajectoryType result(2);
 			result.clear();
 			TimesType resultTimes(1);
@@ -722,12 +766,11 @@ class threshold_sampling_impl
 				//START Calculate upper and lower angle and radius for trajectory and sample based last two points.
 
 				//For velocity vector of trajectory, take last 2 elements in original trajectory
-				cout << "velocity for: " << i << endl;
-				vector<double> velocity_vector_traj = calc_velocity_vector(traj[i-2][0], traj[i-1][0],
-													traj[i-2][1], traj[i-1][1], times[i-2], times[i-1]);
+				vector<double> velocity_vector_traj = trajcomp::tools::calc_velocity_vector(traj[i-2][1], traj[i-1][1],
+													traj[i-2][0], traj[i-1][0], times[i-2], times[i-1]);
 				//For velocity vector of sample, take last 2 elements in result trajectory
-				vector<double> velocity_vector_sample = calc_velocity_vector(result[resultSize-2][0], result[resultSize-1][0], result[resultSize-2][1],
-												result[resultSize-1][1], resultTimes[resultSize-2], resultTimes[resultSize-1]);
+				vector<double> velocity_vector_sample = trajcomp::tools::calc_velocity_vector(result[resultSize-2][1], result[resultSize-1][1], result[resultSize-2][0],
+												result[resultSize-1][0], resultTimes[resultSize-2], resultTimes[resultSize-1]);
 
 				//Calculate the radius for trajectory and sample based using the calculated velocity vectors
 				double upper_radius_traj = ((times[i] - times[i-1]) / 1000.0) *
@@ -740,22 +783,26 @@ class threshold_sampling_impl
 				double lower_radius_sample = ((times[i] - times[i-1]) / 1000.0) *
 												(velocity_vector_sample[0]*(1 - velocity_thresh));
 
+				cout << "Upper radius traj: " << upper_radius_traj << " lower: " << lower_radius_traj << endl;
+				cout << "Uppe radius sample: " << upper_radius_sample << " lower: " << lower_radius_sample << endl;
 				//Calculate orientation angle for both from given slopes
-				double upper_slope_traj = velocity_vector_traj[1]*(180/M_PI)  + orientation_thresh;
-				double lower_slope_traj = velocity_vector_traj[1]*(180/M_PI)  - orientation_thresh;
+				double upper_slope_traj = velocity_vector_traj[1] + orientation_thresh;
+				double lower_slope_traj = velocity_vector_traj[1] - orientation_thresh;
 
 
-				double upper_slope_sample = velocity_vector_sample[1]*(180/M_PI)  + orientation_thresh;
-				double lower_slope_sample = velocity_vector_sample[1]*(180/M_PI)  - orientation_thresh;
-
+				double upper_slope_sample = velocity_vector_sample[1] + orientation_thresh;
+				double lower_slope_sample = velocity_vector_sample[1] - orientation_thresh;
+				cout << "Upper slope traj: " << upper_slope_traj << " lower: " << lower_slope_traj << endl;
+				cout << "Uppe slope sample: " << upper_slope_sample << " lower: " << lower_slope_sample << endl;
 				//START Calculate angle and radius for point to insert
-				vector<double> velocity_vector_insert = calc_velocity_vector(traj[i-1][0], traj[i][0],
-													traj[i-1][1], traj[i][1], times[i-1], times[i]);
+				vector<double> velocity_vector_insert = trajcomp::tools::calc_velocity_vector(traj[i-1][1], traj[i][1],
+													traj[i-1][0], traj[i][0], times[i-1], times[i]);
 
 				double radius_insert = ((times[i] - times[i-1]) / 1000.0) *
 												velocity_vector_insert[0];
-
-				double angle_insert = velocity_vector_insert[1] * (180/M_PI);
+				cout << "Radius insert: " << radius_insert <<endl;
+				double angle_insert = velocity_vector_insert[1];
+				cout << "angle insert: " << angle_insert << endl;
 
 				//Check if new points angle and radius is inside of the calculated
 				bool isInRadius = false;
@@ -774,6 +821,8 @@ class threshold_sampling_impl
 					resultTimes.push_back(times[i]);
 				}
 			}
+
+			cout << "Original size: " << traj.size() << " threshold sampling result size: " << result.size() << endl;
 
 			return result;
 		}

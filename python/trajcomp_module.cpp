@@ -227,6 +227,7 @@ trajcomp_size(PyObject *self, PyObject *args)
 static PyObject *
 trajcomp_douglas_peucker_online(PyObject *self, PyObject *args)
 {
+	std::cout << std::setprecision(10);
 	const char *s;
 	//const char *epsilon;
 	double epsilon;
@@ -235,16 +236,18 @@ trajcomp_douglas_peucker_online(PyObject *self, PyObject *args)
 		return NULL;
 	}
 	trajectory traj(2);
+	trajectory noise(2);
 	trajectory dp_result(2);
 	string data(s);
 //	string data2(epsilon);
  	loadXY(data, traj);
-	std::cout << "Douglas Peucker original length: " << traj.size() << endl;
-	std::cout << "Epsilon: " << epsilon << endl;
  	dp_result = trajcomp::douglas_peucker(traj, epsilon);
-	std::cout << "Douglas peucker  result length: " << dp_result.size() << endl;;
- 	PyObject *list = PyList_New(0);
+
+	PyObject *traj_list = PyList_New(0);
+	PyObject *list = PyList_New(0);
  	trajectory::Base::iterator it;
+	std::cout << "original points: " << std::endl;
+
  	for (it = dp_result.begin(); it != dp_result.end(); it++)
 	{
 
@@ -252,12 +255,32 @@ trajcomp_douglas_peucker_online(PyObject *self, PyObject *args)
 		trajectory::ElementType::iterator it2;
 		for (it2 = (*it).begin(); it2 != (*it).end(); it2++)
 		{
-			std::cout << *it2;
+			std::cout << *it2 << " ";
 			PyList_Append(child, Py_BuildValue("d",*it2));
 		}
 		std::cout << std::endl;
-		PyList_Append(list,child);
+		PyList_Append(traj_list,child);
 	}
+	PyList_Append(list, traj_list);
+	noise = trajcomp::tools::getNoisePoints(traj, dp_result);
+	std::cout << "Noise points: " << std::endl;
+	PyObject *noise_list = PyList_New(0);
+	for (it = noise.begin(); it != noise.end(); it++)
+	{
+
+		PyObject *child = PyList_New(0);
+		trajectory::ElementType::iterator it2;
+		for (it2 = (*it).begin(); it2 != (*it).end(); it2++)
+		{
+			std::cout << *it2 << " ";
+			PyList_Append(child, Py_BuildValue("d",*it2));
+		}
+		std::cout << std::endl;
+		PyList_Append(noise_list,child);
+	}
+
+	PyList_Append(list, noise_list);
+
 	return list;
 }
 
@@ -281,9 +304,11 @@ trajcomp_DBSCAN_segmentation(PyObject *self, PyObject *args)
 	// e.g. /googleNow/Jan/1/
 	string clusterName(n);
 	trajectory traj(2);
+	trajectory noise(2);
 	loadXY(dataPath, traj);
 	trajectory dbscan_result = trajcomp::DBSCAN_segmentation(traj, epsilon, minPts, clusterName, dataPath, pathToElki);
 
+	PyObject *traj_list = PyList_New(0);
 	PyObject *list = PyList_New(0);
  	trajectory::Base::iterator it;
  	for (it = dbscan_result.begin(); it != dbscan_result.end(); it++)
@@ -293,12 +318,31 @@ trajcomp_DBSCAN_segmentation(PyObject *self, PyObject *args)
 		trajectory::ElementType::iterator it2;
 		for (it2 = (*it).begin(); it2 != (*it).end(); it2++)
 		{
-			//std::cout << *it2 << " ";
 			PyList_Append(child, Py_BuildValue("d",*it2));
 		}
-		//std::cout << std::endl;
-		PyList_Append(list,child);
+		PyList_Append(traj_list,child);
 	}
+
+	PyList_Append(list, traj_list);
+	noise = trajcomp::tools::getNoisePoints(traj, dbscan_result);
+	std::cout << "Noise points: " << std::endl;
+	PyObject *noise_list = PyList_New(0);
+	for (it = noise.begin(); it != noise.end(); it++)
+	{
+
+		PyObject *child = PyList_New(0);
+		trajectory::ElementType::iterator it2;
+		for (it2 = (*it).begin(); it2 != (*it).end(); it2++)
+		{
+			std::cout << *it2 << " ";
+			PyList_Append(child, Py_BuildValue("d",*it2));
+		}
+		std::cout << std::endl;
+		PyList_Append(noise_list,child);
+	}
+
+	PyList_Append(list, noise_list);
+
 	return list;
 }
 
@@ -337,7 +381,6 @@ trajcomp_resample(PyObject *self, PyObject *args)
 		trajectory::ElementType::iterator it2;
 		for (it2 = (*it).begin(); it2 != (*it).end(); it2++)
 		{
-			std::cout << *it2 << " ";
 			PyList_Append(child, Py_BuildValue("d",*it2));
 		}
 		PyList_Append(traj_list,child);
@@ -371,6 +414,7 @@ trajcomp_threshold(PyObject *self, PyObject *args)
 	trajectory result(2);
 	std::string dataPath(d);
 	std::string timesPath(t);
+	trajectory noise(2);
 	vector<double> times(1);
 	trajectory resample_result(2);
 	loadXY(dataPath, traj);
@@ -378,8 +422,25 @@ trajcomp_threshold(PyObject *self, PyObject *args)
 	result = trajcomp::threshold_sampling(traj, times, v, o);
 
 	PyObject *list = PyList_New(0);
+	PyObject *traj_list = PyList_New(0);
 	trajectory::Base::iterator it;
  	for (it = result.begin(); it != result.end(); it++)
+	{
+
+		PyObject *child = PyList_New(0);
+		trajectory::ElementType::iterator it2;
+		for (it2 = (*it).begin(); it2 != (*it).end(); it2++)
+		{
+			PyList_Append(child, Py_BuildValue("d",*it2));
+		}
+		PyList_Append(traj_list,child);
+	}
+
+	PyList_Append(list, traj_list);
+	noise = trajcomp::tools::getNoisePoints(traj, result);
+	std::cout << "Noise points: " << std::endl;
+	PyObject *noise_list = PyList_New(0);
+	for (it = noise.begin(); it != noise.end(); it++)
 	{
 
 		PyObject *child = PyList_New(0);
@@ -390,11 +451,57 @@ trajcomp_threshold(PyObject *self, PyObject *args)
 			PyList_Append(child, Py_BuildValue("d",*it2));
 		}
 		std::cout << std::endl;
-		PyList_Append(list,child);
+		PyList_Append(noise_list,child);
 	}
+
+	PyList_Append(list, noise_list);
 	return list;
 }
 
+static PyObject *
+trajcomp_get_g_id(PyObject *self, PyObject *args)
+{
+	std::cout << "enter python module threshold" << endl;
+	const char* d;
+	const char* t;
+	if (!PyArg_ParseTuple(args, "ss", &d, &t)) {
+		std::cout << "Error in parsing params from python to c++" << std::endl;
+		return NULL;
+	}
+	std::string dataPath(d);
+	std::string timesPath(t);
+
+	trajectory traj(2);
+	vector<double> times(1);
+	loadXY(dataPath, traj);
+	loadTime(timesPath, times);
+
+	PyObject *traj_list = PyList_New(0);
+	PyObject *list = PyList_New(0);
+ 	trajectory::Base::iterator it;
+ 	for (it = traj.begin(); it != traj.end(); it++)
+	{
+
+		PyObject *child = PyList_New(0);
+		trajectory::ElementType::iterator it2;
+		for (it2 = (*it).begin(); it2 != (*it).end(); it2++)
+		{
+			PyList_Append(child, Py_BuildValue("d",*it2));
+		}
+		PyList_Append(traj_list,child);
+	}
+	PyList_Append(list, traj_list);
+
+	std::vector<double>::iterator it3;
+	PyObject *times_list = PyList_New(0);
+	for (it3 = times.begin(); it3 != times.end(); it3++)
+	{
+
+		PyList_Append(times_list, Py_BuildValue("d",*it3));
+	}
+	PyList_Append(list, times_list);
+	return list;
+}
 
 static PyObject *
 trajcomp_system(PyObject *self, PyObject *args);
@@ -416,6 +523,8 @@ static PyMethodDef TrajcompMethods[] = {
 	{"dbscan", trajcomp_DBSCAN_segmentation, METH_VARARGS, "DBSCAN segmentation on input trajectory path"},
 	{"resample", trajcomp_resample, METH_VARARGS, "Resample input trajectory"},
 	{"threshold", trajcomp_threshold, METH_VARARGS, "Calculate threshold sampling trajectory"},
+	{"get_g_id", trajcomp_get_g_id, METH_VARARGS, "Gat trajectory with id"},
+
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 

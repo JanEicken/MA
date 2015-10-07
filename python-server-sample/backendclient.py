@@ -3,6 +3,43 @@ import json;
 
 # GET A TRAJECTORY FROM PERSISTENT BACKEND MODULE
 
+def backend_get_g_id(i):
+	HOST, PORT = "localhost", 9999
+	# Create a socket (SOCK_STREAM means a TCP socket)
+	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	fss = "";
+	fss += i + " ";
+	fss = fss[:-1]
+	try:
+		sock.connect((HOST, PORT))
+		f = sock.makefile()
+		sock.sendall("GETGID "+fss+" \n");
+		#received = sock.recv(1024)
+		s = f.readline();
+		sock.sendall("QUIT\n");
+	finally:
+		sock.close()
+	print "backendclient back"
+	return json.loads(s);
+
+def backend_threshold_data(p):
+	HOST, PORT = "localhost", 9999
+	# Create a socket (SOCK_STREAM means a TCP socket)
+	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	fss = "";
+	fss += p + " ";
+	fss = fss[:-1]
+	try:
+		sock.connect((HOST, PORT))
+		f = sock.makefile()
+		sock.sendall("PERSISTENCE "+fss+" \n");
+		#received = sock.recv(1024)
+		s = f.readline();
+		sock.sendall("QUIT\n");
+	finally:
+		sock.close()
+	return json.loads(s);
+
 def backend_threshold_data(v, o):
 	HOST, PORT = "localhost", 9999
 	# Create a socket (SOCK_STREAM means a TCP socket)

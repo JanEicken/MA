@@ -35,4 +35,4 @@
 # -evaluator AutomaticEvaluation
 ###############################################################
 # Pair-F1, Pair-Precision, Pair-Recall, Pair-Rand, Pair-AdjustedRand, Pair-FowlkesMallows, Pair-Jaccard, Pair-Mirkin, Entropy-VI, Entropy-NormalizedVI, Entropy-F1, Edit-F1, SM-InvPurity, SM-Purity, SM-F1, BCubed-Precision, BCubed-Recall, BCubed-F1
-1.0 1.0 1.0 1.0 NaN 1.0 1.0 0 0.0 NaN 0.9090909090909091 1.0 1.0 1.0 1.0 1.0 1.0
+0.5457298606904906 1.0 0.3752603082049146 0.3752603082049146 0.0 0.6125849395838218 0.3752603082049146 3000 1.0363122190325795 1.0 0.6258503401360545 1.0 0.4897959183673469 0.6575342465753424 0.37526030820491457 1.0 0.5457298606904906

@@ -164,6 +164,7 @@
 				map.graphics.clear();
 
 			}
+
 			if (tool == "show")
 			{
 					idx = $("#idx").val();
@@ -237,6 +238,16 @@
 
           doThreshold(velocity, orientation);
       }
+      if (tool == "get")
+      {
+          var googleID = prompt("Please enter ID of trajectory: ", "72");
+          getGID(googleID);
+      }
+      if (tool == "persistence")
+      {
+          var persThresh = prompt("Please enter persistence threshold: ", "20");
+          doPersistence(persThresh);
+      }
 
 
     });
@@ -294,8 +305,10 @@
     function onClick(evt)
     {
 			len = parseInt($("#geohashlen").val());
-			lat =evt.mapPoint.getLatitude();
-			lon = evt.mapPoint.getLongitude();
+			lat =evt.mapPoint.getLatitude().toString();
+			lon = evt.mapPoint.getLongitude().toString();
+            lat = lat.slice(0, 10);
+            lon = lon.slice(0, 10);
 			$("#point").val(lat + ' ' + lon);
 			s = encodeGeoHash(lat,lon)
 			s = s.substring(0,len);
@@ -334,16 +347,57 @@
 		});
 	}
 
-    function doDouglasPeucker(epsilon)
+    function getGID(id)
 	{
-        myURL = "douglasPeucker?eps="+epsilon+"&coords="+encodeURIComponent($("#coordinates").val());
+        myURL = "getID?id="+id;
 
-        //map.graphics.clear();
+        map.graphics.clear();
         $.get( myURL, function( data ) {
             map.graphics.remove(map.graphics.graphics[map.graphics.graphics.length -1])
-
-            pa = JSON.parse(data);
+            all = JSON.parse(data);
+            pa = all[0];
+            ti = all[1];
+            rawCoordinates=[];
+            rawTimes=[];
             transformedPoints=[];
+            //alert('h');
+            var sr = map.spatialReference;
+            TIMES = JSON.parse($("#times").val());
+            for(index =0; index < pa.length; index++)
+            {
+                rawCoordinates[rawCoordinates.length] = pa[index][0] + ' ' + pa[index][1];
+                rawTimes[index] = ti[index];
+                p = ToWebMercator([pa[index][0],pa[index][1]]);
+                var point = new Point([p[1], p[0]], sr);
+                map.graphics.add(new Graphic(point, pointSymbol));
+                transformedPoints[index] = [p[1],p[0]];
+                //Write times
+
+                TIMES[TIMES.length] = ti[index];
+
+            }
+            var pl = new esri.geometry.Polyline(sr);
+            pl.addPath(transformedPoints);
+            map.graphics.add(new Graphic(pl, lineSymbol));
+            $('#times').val(JSON.stringify(TIMES));
+            $("#coordinates").val(JSON.stringify(rawCoordinates));
+        });
+	}
+
+    function doDouglasPeucker(epsilon)
+	{
+        myURL = "douglasPeucker";
+        console.log($("#coordinates").val())
+        //map.graphics.clear();
+
+        $.post( myURL, {eps: epsilon, coords: $("#coordinates").val()})
+        .done( function( data ) {
+            map.graphics.remove(map.graphics.graphics[map.graphics.graphics.length -1])
+            all = JSON.parse(data);
+            pa = all[0];
+            transformedPoints=[];
+            console.log("NOISE");
+            console.log(all[1]);
             //alert('h');
             var sr = map.spatialReference;
             for(index =0; index < pa.length; index++)
@@ -359,15 +413,46 @@
         });
 	}
 
-    function doDbscan(epsilon, minPts)
+    function doPersistence(persThresh)
 	{
-        myURL = "dbscan?eps="+epsilon+"&minPts="+minPts+"&coords="+encodeURIComponent($("#coordinates").val());
+        myURL = "persistence";
+        console.log($("#coordinates").val())
+        //map.graphics.clear();
+
+        $.post( myURL, {pers: persThresh, coords: $("#coordinates").val()})
+        .done( function( data ) {
+            map.graphics.remove(map.graphics.graphics[map.graphics.graphics.length -1])
+            all = JSON.parse(data);
+            pa = all[0];
+            transformedPoints=[];
+            console.log("NOISE");
+            console.log(all[1]);
+            //alert('h');
+            var sr = map.spatialReference;
+            for(index =0; index < pa.length; index++)
+            {
+              p = ToWebMercator([pa[index][0],pa[index][1]]);
+              transformedPoints[index] = [p[1],p[0]];
+            }
+              //alert(JSON.stringify(transformedPoints));
+            //var sr = //new esri.SpatialReference({wkid: 4326});
+            var pl = new esri.geometry.Polyline(sr);
+            pl.addPath(transformedPoints);
+            map.graphics.add(new Graphic(pl, lineSymbol2));
+        });
+	}
+
+    function doDbscan(epsilon, minPoints)
+	{
+        myURL = "dbscan";
 
         //map.graphics.clear();
 
-        $.get( myURL, function( data ) {
+        $.post( myURL, {eps: epsilon, minPts : minPoints, coords: $("#coordinates").val()})
+        .done( function( data ) {
             map.graphics.remove(map.graphics.graphics[map.graphics.graphics.length -1])
-            pa = JSON.parse(data);
+            all = JSON.parse(data);
+            pa = all[0];
             transformedPoints=[];
             //alert('h');
             var sr = map.spatialReference;
@@ -386,15 +471,16 @@
         });
 	}
 
-    function doResample(dist)
+    function doResample(distance)
 	{
-        myURL = "resampleData?dist="+dist+"&coords="+encodeURIComponent($("#coordinates").val())+"&times="+encodeURIComponent($("#times").val());
-        $("#coordinates").val("[]");
-        $("#query").val("[]");
-        $("#times").val("[]");
+        myURL = "resampleData";
 
-        $.get( myURL, function( data ) {
 
+        $.post( myURL, {dist: distance, coords: $("#coordinates").val(), times : $("#times").val()})
+        .done( function( data ) {
+            $("#coordinates").val("[]");
+            $("#query").val("[]");
+            $("#times").val("[]");
             all = JSON.parse(data);
             pa = all[0];
             ti = all[1];
@@ -427,13 +513,14 @@
 
     function doThreshold(velocityT, orientationT)
 	{
-        myURL = "threshold?vel="+velocityT+"&orientation="+orientationT
-                    +"&coords="+encodeURIComponent($("#coordinates").val())
-                    +"&times="+encodeURIComponent($("#times").val());
+        myURL = "threshold";
 
-        $.get( myURL, function( data ) {
+        $.post( myURL, {vel: velocityT, orientation : orientationT,
+            coords: $("#coordinates").val(), times : $("#times").val()})
+        .done( function( data ) {
             map.graphics.remove(map.graphics.graphics[map.graphics.graphics.length -1])
-            pa = JSON.parse(data);
+            all = JSON.parse(data);
+            pa = all[0];
             transformedPoints=[];
             //alert('h');
             var sr = map.spatialReference;
@@ -534,11 +621,13 @@
 		<option>8</option>
 		</select>
 		<H2>Query:</H2>
+        idGoogle
 		<input type=text id=idx></input>
         <button id=douglas_peucker>Douglas Peucker</button>
         <button id=resample>Resample Trajectory</button>
         <button id=dbscan>DBSCAN</button>
         <button id=threshold>Threshold Sampling</button>
+        <button id=Get>Get</button>
 		<!--
         <button id=show>Show</button>
         <button id=idquery>Query By Index</button>

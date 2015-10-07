@@ -108,6 +108,14 @@ def resample_traj(d, h):
 	#        print e
 	return r;
 
+def getID(i):
+	p = "../../doc/md/data/processed/GoogleNow/Jan/" + str(i) + ".csv";
+	pt = "../../doc/md/data/processed/GoogleNow/Jan/times/" + str(i) + ".csv";
+	r = trajcomp.get_g_id(p, pt)
+	print "got back: "
+
+	return r;
+
 
 class MyTCPHandler(SocketServer.StreamRequestHandler):
     """
@@ -161,6 +169,17 @@ class MyTCPHandler(SocketServer.StreamRequestHandler):
 				print C[1:];
 				T = trajcomp.threshold(float(C[1]), float(C[2]), "../TestTraj.csv", "../TestTrajTimes.csv");
 				self.wfile.write(json.dumps(T)+"\n");
+			if C[0] == "PERSISTENCE":
+				print "Peristence backend";
+				print C[1:];
+				T = trajcomp.persistence(float(C[1]), "../TestTraj.csv", "../TestTrajTimes.csv");
+				self.wfile.write(json.dumps(T)+"\n");
+			if C[0] == "GETGID":
+				print "GETID backend";
+				print C[1:];
+				T = getID(C[1]);
+				self.wfile.write(json.dumps(T)+"\n");
+
 			if self.data=="HELO":
 				self.wfile.write("HELO too\n");
 			if self.data=="KILL":

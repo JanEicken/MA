@@ -13,7 +13,7 @@ session_opts = {
 }
 
 app = beaker.middleware.SessionMiddleware(bottle.app(), session_opts)
-
+bottle.BaseRequest.MEMFILE_MAX = 1024 * 1024
 @hook('before_request')
 def setup_request():
 	request.session = request.environ['beaker.session']
@@ -94,10 +94,10 @@ def reset():
 	request.session.delete()
 	return "{}"
 
-@route('/douglasPeucker')
+@route('/douglasPeucker', method='POST')
 def save():
-    epsilon = request.query.eps;
-    coords = json.loads(request.query.coords);
+    epsilon = request.forms.eps;
+    coords = json.loads(request.forms.coords);
     target = open('TestTraj.csv', 'w');
     target.truncate();
     for key in coords:
@@ -109,11 +109,11 @@ def save():
     return methods.get_douglas_peucker("../TestTraj.csv", epsilon);
 	#return methods.do_DBSCAN("TestTraj.csv");
 
-@route('/dbscan')
+@route('/dbscan', method='POST')
 def dbscan():
-    epsilon = request.query.eps;
-    minPts = request.query.minPts;
-    coords = json.loads(request.query.coords);
+    epsilon = request.forms.eps;
+    minPts = request.forms.minPts;
+    coords = json.loads(request.forms.coords);
     target = open('TestTraj.csv', 'w');
     target.truncate();
     for key in coords:
@@ -125,12 +125,12 @@ def dbscan():
     return methods.get_DBSCAN("../TestTraj.csv", minPts, epsilon);
 
 
-@route('/threshold')
+@route('/threshold', method='POST')
 def dbscan():
-    vel_thresh = request.query.vel;
-    or_thresh = request.query.orientation;
-    coords = json.loads(request.query.coords);
-    times = json.loads(request.query.times);
+    vel_thresh = request.forms.vel;
+    or_thresh = request.forms.orientation;
+    coords = json.loads(request.forms.coords);
+    times = json.loads(request.forms.times);
 
     target = open('TestTraj.csv', 'w');
     target.truncate();
@@ -147,11 +147,25 @@ def dbscan():
     target.close();
     return methods.get_threshold_data(vel_thresh, or_thresh);
 
-@route('/resampleData')
+@route('/persistence', method='POST')
+def persistence():
+    pers_thresh = request.forms.pers;
+    coords = json.loads(request.forms.coords);
+
+    target = open('TestTraj.csv', 'w');
+    target.truncate();
+    for key in coords:
+        target.write(str(key));
+        target.write("\n");
+    target.close();
+
+    return methods.get_persistence(pers_thresh);
+
+@route('/resampleData', method='POST')
 def resample():
-    coords = json.loads(request.query.coords);
-    dist_for_resampling = request.query.dist;
-    times = json.loads(request.query.times);
+    coords = json.loads(request.forms.coords);
+    dist_for_resampling = request.forms.dist;
+    times = json.loads(request.forms.times);
     target = open('TestTraj.csv', 'w');
     target.truncate();
     for key in coords:
@@ -168,6 +182,13 @@ def resample():
     R = methods.resample_data("TestTraj", dist_for_resampling);
     print R;
     return R;
+
+@route('/getID')
+def getID():
+    getId = request.query.id;
+    R = backendclient.backend_get_g_id(getId);
+    return json.dumps(R);
+
 
 #@get('/query/<thefilter>')
 #def query_filter( thefilter="NoFilter"):
